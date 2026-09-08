@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Nunito } from 'next/font/google'
+import { Inter, JetBrains_Mono } from 'next/font/google'
 import './globals.css'
 import SessionProviderWrapper from '@/components/SessionProviderWrapper'
 import NotificationWatcher from '@/components/NotificationWatcher'
@@ -7,7 +7,17 @@ import EnvironmentWrapper from '@/components/EnvironmentWrapper'
 import { TimerProvider } from '@/components/TimerContext'
 import FloatingTimerBar from '@/components/FloatingTimerBar'
 
-const nunito = Nunito({ subsets: ['latin'] })
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-inter',
+  display: 'swap',
+})
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  variable: '--font-jetbrains',
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
   title: 'StudySync AI',
@@ -16,8 +26,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body className={nunito.className}>
+    <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`}>
+      <body className="font-sans bg-surface text-on-surface antialiased">
         <SessionProviderWrapper>
           <TimerProvider>
             <NotificationWatcher />

@@ -1,3 +1,149 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  :root {
+    --surface:                  #0f131c;
+    --surface-dim:              #0f131c;
+    --surface-bright:           #353942;
+    --surface-container-lowest: #0a0e16;
+    --surface-container-low:    #181c24;
+    --surface-container:        #1c2028;
+    --surface-container-high:   #262a33;
+    --surface-container-highest:#31353e;
+    --on-surface:               #dfe2ee;
+    --on-surface-variant:       #cbc3d7;
+    --outline:                  #958ea0;
+    --outline-variant:          #494454;
+    --primary:                  #d0bcff;
+    --on-primary:               #3c0091;
+    --primary-container:        #a078ff;
+    --secondary:                #c0c1ff;
+    --on-secondary:             #1000a9;
+    --tertiary:                 #7bd0ff;
+    --error:                    #ffb4ab;
+    --on-error:                 #690005;
+    --error-container:          #93000a;
+    --background:               #0f131c;
+    --on-background:            #dfe2ee;
+    --surface-deep:             #0B0F17;
+    --surface-canvas:           #111827;
+    --telemetry-success:        #10B981;
+    --telemetry-warning:        #F59E0B;
+    --telemetry-danger:         #EF4444;
+    --telemetry-cyan:           #06B6D4;
+  }
+
+  html {
+    background-color: #0f131c;
+    color: #dfe2ee;
+  }
+
+  body {
+    background-color: #0f131c;
+    color: #dfe2ee;
+    font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  * {
+    border-color: #494454;
+  }
+
+  ::selection {
+    background-color: rgba(208, 188, 255, 0.25);
+    color: #dfe2ee;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #0f131c;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #494454;
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #958ea0;
+  }
+
+  input, select, textarea {
+    background-color: rgba(15, 23, 42, 0.6);
+    color: #dfe2ee;
+    border-color: rgba(51, 65, 85, 0.6);
+  }
+
+  input::placeholder, textarea::placeholder {
+    color: #958ea0;
+  }
+
+  input[type="date"]::-webkit-calendar-picker-indicator,
+  input[type="time"]::-webkit-calendar-picker-indicator {
+    filter: invert(0.7);
+  }
+
+  option {
+    background-color: #1c2028;
+    color: #dfe2ee;
+  }
+}
+
+@layer components {
+  /* Glass card */
+  .glass-card {
+    background: rgba(19, 27, 46, 0.7);
+    border: 1px solid rgba(51, 65, 85, 0.4);
+    backdrop-filter: blur(12px);
+  }
+  .glass-card:hover {
+    background: rgba(30, 41, 59, 0.85);
+    border-color: rgba(71, 85, 105, 0.5);
+  }
+
+  /* Telemetry badge */
+  .badge-mono {
+    font-family: var(--font-jetbrains), ui-monospace, monospace;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 14px;
+    letter-spacing: 0.06em;
+    height: 22px;
+    display: inline-flex;
+    align-items: center;
+    padding: 0 8px;
+    border-radius: 4px;
+  }
+
+  /* Primary button */
+  .btn-primary {
+    @apply px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200;
+    background: #8B5CF6;
+    color: #ffffff;
+  }
+  .btn-primary:hover {
+    background: #7C3AED;
+    box-shadow: 0 0 16px rgba(139, 92, 246, 0.35);
+  }
+
+  /* Ghost button */
+  .btn-ghost {
+    @apply px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200;
+    background: rgba(30, 41, 59, 0.5);
+    border: 1px solid rgba(71, 85, 105, 0.4);
+    color: #dfe2ee;
+  }
+  .btn-ghost:hover {
+    border-color: #8B5CF6;
+    color: #d0bcff;
+  }
+
+  /* Mono text */
+  .font-mono-code {
+    font-family: var(--font-jetbrains), ui-monospace, monospace;
+  }
+}
