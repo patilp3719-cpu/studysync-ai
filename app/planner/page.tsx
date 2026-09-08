@@ -361,10 +361,11 @@ export default function PlannerPage() {
                 )}
                 {editingPlan === plan._id && (
                   <div className="px-4 py-4 space-y-3" style={{ borderTop: '1px solid rgba(139,92,246,0.3)', background: 'rgba(139,92,246,0.05)' }}>
-                    <p className="font-mono text-[10px] font-bold uppercase tracking-widest" style={{ color: '#8B5CF6' }}>Edit Plan Content (Markdown)</p>
+                    <p className="font-mono text-[10px] font-bold uppercase tracking-widest" style={{ color: '#8B5CF6' }}>Edit Plan Content</p>
                     <textarea value={editContent} onChange={e => setEditContent(e.target.value)} rows={12}
-                      className="w-full resize-y font-mono text-sm"
-                      style={{ ...inputCls.style, fontFamily: 'var(--font-jetbrains), monospace' }} />
+                      className="w-full resize-y text-sm"
+                      style={{ ...inputCls.style }} />
+                    <p className="font-mono text-[10px]" style={{ color: '#494454' }}>Editing resets checklist progress.</p>
                   </div>
                 )}
               </div>

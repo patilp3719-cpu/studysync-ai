@@ -4,9 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import {
   IconSunrise, IconSun, IconSunset, IconMoon,
-  IconTrophy, IconZap, IconAlertTriangle,
-  IconClipboard, IconTimer, IconTarget, IconCalendar,
-  IconBell, IconCards, IconGamepad, IconCode, IconMenu,
+  IconTrophy, IconZap, IconAlertTriangle, IconMenu,
 } from './Icons'
 
 const QUOTES = [
@@ -26,58 +24,58 @@ const QUOTES = [
 
 const features = [
   {
-    href: '/planner', Icon: IconClipboard, label: 'AI Planner',
+    href: '/planner', emoji: '🗓️', label: 'AI Planner',
     desc: 'Generate a time-aware study schedule from your tasks using AI.',
-    accent: '#3b82f6', accentBg: 'rgba(59,130,246,0.1)', accentBorder: 'rgba(59,130,246,0.25)',
-    badge: 'AI',
+    gradFrom: '#1d4ed8', gradTo: '#4338ca',
+    glow: 'rgba(59,130,246,0.25)', badge: 'AI',
   },
   {
-    href: '/sessions', Icon: IconTimer, label: 'Sessions',
+    href: '/sessions', emoji: '⏱️', label: 'Sessions',
     desc: 'Log planned vs actual times. Detect your procrastination patterns.',
-    accent: '#8B5CF6', accentBg: 'rgba(139,92,246,0.1)', accentBorder: 'rgba(139,92,246,0.25)',
-    badge: 'TRACK',
+    gradFrom: '#6d28d9', gradTo: '#4c1d95',
+    glow: 'rgba(139,92,246,0.25)', badge: 'TRACK',
   },
   {
-    href: '/analyzer', Icon: IconTarget, label: 'Focus Analyzer',
+    href: '/analyzer', emoji: '🎯', label: 'Focus Analyzer',
     desc: 'Visualize focus vs distraction. Get AI feedback on your deep work.',
-    accent: '#10B981', accentBg: 'rgba(16,185,129,0.1)', accentBorder: 'rgba(16,185,129,0.25)',
-    badge: 'AI',
+    gradFrom: '#065f46', gradTo: '#047857',
+    glow: 'rgba(16,185,129,0.25)', badge: 'AI',
   },
   {
-    href: '/timer', Icon: IconTimer, label: 'Pomodoro Timer',
+    href: '/timer', emoji: '🍅', label: 'Pomodoro Timer',
     desc: 'Focus sessions with circular timer, points & a GitHub-style heatmap.',
-    accent: '#F97316', accentBg: 'rgba(249,115,22,0.1)', accentBorder: 'rgba(249,115,22,0.25)',
-    badge: 'XP',
+    gradFrom: '#c2410c', gradTo: '#9a3412',
+    glow: 'rgba(249,115,22,0.25)', badge: 'XP',
   },
   {
-    href: '/exams', Icon: IconCalendar, label: 'Countdown',
+    href: '/exams', emoji: '📅', label: 'Countdown',
     desc: 'Add exams & events. AI generates a personalised prep checklist.',
-    accent: '#EF4444', accentBg: 'rgba(239,68,68,0.1)', accentBorder: 'rgba(239,68,68,0.25)',
-    badge: 'AI',
+    gradFrom: '#b91c1c', gradTo: '#991b1b',
+    glow: 'rgba(239,68,68,0.25)', badge: 'AI',
   },
   {
-    href: '/reminders', Icon: IconBell, label: 'Reminders',
+    href: '/reminders', emoji: '🔔', label: 'Reminders',
     desc: 'Real-time alarm system. Browser notifications even when tab is closed.',
-    accent: '#F59E0B', accentBg: 'rgba(245,158,11,0.1)', accentBorder: 'rgba(245,158,11,0.25)',
-    badge: 'LIVE',
+    gradFrom: '#b45309', gradTo: '#92400e',
+    glow: 'rgba(245,158,11,0.25)', badge: 'LIVE',
   },
   {
-    href: '/flashcards', Icon: IconCards, label: 'Flashcards',
+    href: '/flashcards', emoji: '🃏', label: 'Flashcards',
     desc: 'Paste notes or upload PDF/DOCX — AI generates 8 quiz cards instantly.',
-    accent: '#06B6D4', accentBg: 'rgba(6,182,212,0.1)', accentBorder: 'rgba(6,182,212,0.25)',
-    badge: 'AI',
+    gradFrom: '#0e7490', gradTo: '#155e75',
+    glow: 'rgba(6,182,212,0.25)', badge: 'AI',
   },
   {
-    href: '/games', Icon: IconGamepad, label: 'Games Zone',
+    href: '/games', emoji: '🎮', label: 'Games Zone',
     desc: 'Memory match, typing speed, CS quiz & flashcard challenge.',
-    accent: '#6366F1', accentBg: 'rgba(99,102,241,0.1)', accentBorder: 'rgba(99,102,241,0.25)',
-    badge: 'FUN',
+    gradFrom: '#4338ca', gradTo: '#3730a3',
+    glow: 'rgba(99,102,241,0.3)', badge: 'FUN',
   },
   {
-    href: '/devzone', Icon: IconCode, label: 'Dev Zone',
+    href: '/devzone', emoji: '💻', label: 'Dev Zone',
     desc: 'DSA tracker, project board, interview prep & tech stack advisor.',
-    accent: '#10B981', accentBg: 'rgba(16,185,129,0.1)', accentBorder: 'rgba(16,185,129,0.25)',
-    badge: 'DEV',
+    gradFrom: '#064e3b', gradTo: '#065f46',
+    glow: 'rgba(16,185,129,0.3)', badge: 'DEV',
   },
 ]
 
@@ -174,9 +172,9 @@ export default function DashboardClient({
     },
     {
       label: 'Study Streak',
-      value: streak > 0 ? `${streak}d` : '—',
+      value: `${streak}d`,
       color: streak > 0 ? '#F59E0B' : '#958ea0',
-      sub: streak > 0 ? 'Keep it going!' : 'Start your streak today',
+      sub: streak > 0 ? 'Keep it going!' : 'Streak reset — log today!',
       subExtra: '',
     },
   ]
@@ -282,30 +280,32 @@ export default function DashboardClient({
           <p className="font-mono text-[10px]" style={{ color: '#494454' }}>{features.length} tools</p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {features.map(f => (
             <Link key={f.href} href={f.href}
-              className="group rounded-xl p-4 flex flex-col gap-3 transition-all duration-200 hover:scale-[1.01]"
-              style={{ background: f.accentBg, border: `1px solid ${f.accentBorder}` }}>
-              {/* Header row */}
-              <div className="flex items-start justify-between">
-                <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-                  style={{ background: 'rgba(0,0,0,0.25)', border: `1px solid ${f.accentBorder}` }}>
-                  <f.Icon size={17} style={{ color: f.accent }} />
-                </div>
-                <span className="font-mono text-[9px] font-bold px-1.5 py-0.5 rounded"
-                  style={{ background: 'rgba(0,0,0,0.3)', color: f.accent, letterSpacing: '0.08em' }}>
+              className="group block rounded-2xl p-5 hover:scale-[1.03] transition-all duration-200 shadow-lg"
+              style={{
+                background: `linear-gradient(135deg, ${f.gradFrom}, ${f.gradTo})`,
+                boxShadow: `0 8px 24px ${f.glow}`,
+              }}>
+              {/* Icon */}
+              <div className="text-4xl mb-3">{f.emoji}</div>
+              {/* Title + badge */}
+              <div className="flex items-center gap-2 mb-2">
+                <h3 className="text-base font-bold text-white">{f.label}</h3>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                  style={{ background: 'rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.9)' }}>
                   {f.badge}
                 </span>
               </div>
-              {/* Body */}
-              <div>
-                <p className="font-semibold text-sm leading-tight" style={{ color: '#dfe2ee' }}>{f.label}</p>
-                <p className="text-xs mt-1 leading-relaxed" style={{ color: '#958ea0' }}>{f.desc}</p>
+              {/* Desc */}
+              <p className="text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.7)' }}>{f.desc}</p>
+              {/* Arrow */}
+              <div className="mt-4 flex items-center gap-1 text-xs transition-colors"
+                style={{ color: 'rgba(255,255,255,0.55)' }}>
+                <span className="group-hover:text-white transition-colors">Open</span>
+                <span className="group-hover:translate-x-1 transition-transform">→</span>
               </div>
-              {/* Footer arrow */}
-              <p className="font-mono text-[10px] font-bold transition-transform group-hover:translate-x-1"
-                style={{ color: f.accent }}>Open →</p>
             </Link>
           ))}
         </div>
