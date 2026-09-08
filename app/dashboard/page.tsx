@@ -227,8 +227,7 @@ export default async function DashboardPage() {
           style={{
             background: 'rgba(99,102,241,0.12)',
             border: '1px solid rgba(99,102,241,0.35)',
-          }}
-          onMouseEnter={undefined}>
+          }}>
           <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl shrink-0"
             style={{ background: 'rgba(99,102,241,0.2)', border: '1px solid rgba(99,102,241,0.3)' }}>🎮</div>
           <div>
@@ -266,12 +265,6 @@ export default async function DashboardPage() {
               style={{
                 background: 'rgba(19,27,46,0.7)',
                 border: `1px solid rgba(51,65,85,0.4)`,
-              }}
-              onMouseEnter={e => {
-                (e.currentTarget as HTMLAnchorElement).style.borderColor = `${tool.accent}44`
-              }}
-              onMouseLeave={e => {
-                (e.currentTarget as HTMLAnchorElement).style.borderColor = 'rgba(51,65,85,0.4)'
               }}>
               <p className="font-semibold text-sm mb-0.5" style={{ color: '#dfe2ee' }}>{tool.label}</p>
               <p className="font-mono text-[10px]" style={{ color: '#958ea0' }}>{tool.sub}</p>
