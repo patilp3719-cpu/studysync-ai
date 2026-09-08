@@ -7,10 +7,11 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   IconHome, IconClipboard, IconTimer, IconTarget, IconCalendar,
-  IconBell, IconCards, IconGamepad, IconCode, IconGradCap,
+  IconBell, IconCards, IconGamepad, IconCode,
   IconChevronLeft, IconChevronRight, IconChevronDown, IconChevronUp,
-  IconMenu, IconX, IconUser, IconLogOut,
+  IconMenu, IconX, IconLogOut,
 } from './Icons'
+import { LogoSVG } from './SplashScreen'
 
 const mainNav = [
   { href: '/dashboard', Icon: IconHome,      label: 'Dashboard' },
@@ -50,9 +51,9 @@ export default function MainSidebar() {
         style={{ borderBottom: '1px solid rgba(73,68,84,0.4)' }}>
         {!collapsed && (
           <Link href="/dashboard" className="flex items-center gap-2 group">
-            <div className="w-7 h-7 rounded-lg flex items-center justify-center"
-              style={{ background: 'rgba(139,92,246,0.2)', border: '1px solid rgba(139,92,246,0.4)' }}>
-              <IconGradCap size={15} className="text-violet-400" />
+            <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+              style={{ background: '#1a1535', border: '1px solid rgba(139,92,246,0.35)' }}>
+              <LogoSVG size={20} />
             </div>
             <span className="font-bold text-sm tracking-tight text-on-surface">
               StudySync <span style={{ color: '#d0bcff' }}>AI</span>
@@ -61,8 +62,8 @@ export default function MainSidebar() {
         )}
         {collapsed && (
           <div className="w-7 h-7 rounded-lg flex items-center justify-center"
-            style={{ background: 'rgba(139,92,246,0.2)', border: '1px solid rgba(139,92,246,0.4)' }}>
-            <IconGradCap size={15} className="text-violet-400" />
+            style={{ background: '#1a1535', border: '1px solid rgba(139,92,246,0.35)' }}>
+            <LogoSVG size={20} />
           </div>
         )}
         <button
@@ -222,8 +223,8 @@ export default function MainSidebar() {
         }}>
         <Link href="/dashboard" className="flex items-center gap-2">
           <div className="w-6 h-6 rounded-md flex items-center justify-center"
-            style={{ background: 'rgba(139,92,246,0.2)', border: '1px solid rgba(139,92,246,0.4)' }}>
-            <IconGradCap size={13} className="text-violet-400" />
+            style={{ background: '#1a1535', border: '1px solid rgba(139,92,246,0.35)' }}>
+            <LogoSVG size={18} />
           </div>
           <span className="font-bold text-sm" style={{ color: '#dfe2ee' }}>
             StudySync <span style={{ color: '#d0bcff' }}>AI</span>

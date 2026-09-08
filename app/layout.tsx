@@ -6,6 +6,7 @@ import NotificationWatcher from '@/components/NotificationWatcher'
 import EnvironmentWrapper from '@/components/EnvironmentWrapper'
 import { TimerProvider } from '@/components/TimerContext'
 import FloatingTimerBar from '@/components/FloatingTimerBar'
+import SplashScreen from '@/components/SplashScreen'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -30,6 +31,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="font-sans bg-surface text-on-surface antialiased">
         <SessionProviderWrapper>
           <TimerProvider>
+            <SplashScreen />
             <NotificationWatcher />
             <FloatingTimerBar />
             <EnvironmentWrapper>
