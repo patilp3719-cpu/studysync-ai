@@ -1,7 +1,13 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { IconSunrise, IconSun, IconSunset, IconMoon, IconTrophy, IconZap, IconAlertTriangle } from './Icons'
+import Link from 'next/link'
+import {
+  IconSunrise, IconSun, IconSunset, IconMoon,
+  IconTrophy, IconZap, IconAlertTriangle,
+  IconClipboard, IconTimer, IconTarget, IconCalendar,
+  IconBell, IconCards, IconGamepad, IconCode, IconMenu,
+} from './Icons'
 
 const QUOTES = [
   { text: "The secret of getting ahead is getting started.", author: "Mark Twain" },
@@ -10,29 +16,80 @@ const QUOTES = [
   { text: "Success is the sum of small efforts repeated day in and day out.", author: "Robert Collier" },
   { text: "The expert in anything was once a beginner.", author: "Helen Hayes" },
   { text: "Push yourself, because no one else is going to do it for you.", author: "Unknown" },
-  { text: "Great things never come from comfort zones.", author: "Unknown" },
-  { text: "Dream it. Wish it. Do it.", author: "Unknown" },
-  { text: "Stay focused and never give up.", author: "Unknown" },
   { text: "Code is like humor. When you have to explain it, it's bad.", author: "Cory House" },
   { text: "First, solve the problem. Then, write the code.", author: "John Johnson" },
-  { text: "Experience is the name everyone gives to their mistakes.", author: "Oscar Wilde" },
   { text: "The only way to do great work is to love what you do.", author: "Steve Jobs" },
   { text: "Learning never exhausts the mind.", author: "Leonardo da Vinci" },
   { text: "An investment in knowledge pays the best interest.", author: "Benjamin Franklin" },
-  { text: "Strive for progress, not perfection.", author: "Unknown" },
-  { text: "You don't have to be great to start, but you have to start to be great.", author: "Zig Ziglar" },
   { text: "Hard work beats talent when talent doesn't work hard.", author: "Tim Notke" },
+]
+
+const features = [
+  {
+    href: '/planner', Icon: IconClipboard, label: 'AI Planner',
+    desc: 'Generate a time-aware study schedule from your tasks using AI.',
+    accent: '#3b82f6', accentBg: 'rgba(59,130,246,0.1)', accentBorder: 'rgba(59,130,246,0.25)',
+    badge: 'AI',
+  },
+  {
+    href: '/sessions', Icon: IconTimer, label: 'Sessions',
+    desc: 'Log planned vs actual times. Detect your procrastination patterns.',
+    accent: '#8B5CF6', accentBg: 'rgba(139,92,246,0.1)', accentBorder: 'rgba(139,92,246,0.25)',
+    badge: 'TRACK',
+  },
+  {
+    href: '/analyzer', Icon: IconTarget, label: 'Focus Analyzer',
+    desc: 'Visualize focus vs distraction. Get AI feedback on your deep work.',
+    accent: '#10B981', accentBg: 'rgba(16,185,129,0.1)', accentBorder: 'rgba(16,185,129,0.25)',
+    badge: 'AI',
+  },
+  {
+    href: '/timer', Icon: IconTimer, label: 'Pomodoro Timer',
+    desc: 'Focus sessions with circular timer, points & a GitHub-style heatmap.',
+    accent: '#F97316', accentBg: 'rgba(249,115,22,0.1)', accentBorder: 'rgba(249,115,22,0.25)',
+    badge: 'XP',
+  },
+  {
+    href: '/exams', Icon: IconCalendar, label: 'Countdown',
+    desc: 'Add exams & events. AI generates a personalised prep checklist.',
+    accent: '#EF4444', accentBg: 'rgba(239,68,68,0.1)', accentBorder: 'rgba(239,68,68,0.25)',
+    badge: 'AI',
+  },
+  {
+    href: '/reminders', Icon: IconBell, label: 'Reminders',
+    desc: 'Real-time alarm system. Browser notifications even when tab is closed.',
+    accent: '#F59E0B', accentBg: 'rgba(245,158,11,0.1)', accentBorder: 'rgba(245,158,11,0.25)',
+    badge: 'LIVE',
+  },
+  {
+    href: '/flashcards', Icon: IconCards, label: 'Flashcards',
+    desc: 'Paste notes or upload PDF/DOCX — AI generates 8 quiz cards instantly.',
+    accent: '#06B6D4', accentBg: 'rgba(6,182,212,0.1)', accentBorder: 'rgba(6,182,212,0.25)',
+    badge: 'AI',
+  },
+  {
+    href: '/games', Icon: IconGamepad, label: 'Games Zone',
+    desc: 'Memory match, typing speed, CS quiz & flashcard challenge.',
+    accent: '#6366F1', accentBg: 'rgba(99,102,241,0.1)', accentBorder: 'rgba(99,102,241,0.25)',
+    badge: 'FUN',
+  },
+  {
+    href: '/devzone', Icon: IconCode, label: 'Dev Zone',
+    desc: 'DSA tracker, project board, interview prep & tech stack advisor.',
+    accent: '#10B981', accentBg: 'rgba(16,185,129,0.1)', accentBorder: 'rgba(16,185,129,0.25)',
+    badge: 'DEV',
+  },
 ]
 
 type GreetingIcon = 'sunrise' | 'sun' | 'sunset' | 'moon'
 function getTimeGreeting(hour: number): { greeting: string; iconType: GreetingIcon; sub: string } {
-  if (hour >= 5 && hour < 12) return { greeting: 'Good Morning',   iconType: 'sunrise', sub: 'Rise and shine — your goals await!' }
+  if (hour >= 5  && hour < 12) return { greeting: 'Good Morning',   iconType: 'sunrise', sub: 'Rise and shine — your goals await!' }
   if (hour >= 12 && hour < 17) return { greeting: 'Good Afternoon', iconType: 'sun',     sub: 'Midday check-in — keep the momentum going!' }
   if (hour >= 17 && hour < 21) return { greeting: 'Good Evening',   iconType: 'sunset',  sub: 'Evening hustle — great time to review your day.' }
   return { greeting: 'Good Night', iconType: 'moon', sub: "Rest well — tomorrow's another chance to excel." }
 }
 
-function GreetingIcon({ type, size = 20 }: { type: GreetingIcon; size?: number }) {
+function GreetingIcon({ type, size = 22 }: { type: GreetingIcon; size?: number }) {
   if (type === 'sunrise') return <IconSunrise size={size} style={{ color: '#F59E0B' }} />
   if (type === 'sun')     return <IconSun     size={size} style={{ color: '#F59E0B' }} />
   if (type === 'sunset')  return <IconSunset  size={size} style={{ color: '#F97316' }} />
@@ -45,15 +102,29 @@ interface DashboardClientProps {
   doneTasks: number
   pendingTasks: number
   streak: number
+  procrastinationGap: number | null
+  focusRatio: number | null
+  lastSessionSubject: string | null
+  lastSessionDate: string | null
+  lastFocusSubject: string | null
+  lastFocusDate: string | null
+  nextTaskTitle: string | null
+  nextTaskDue: string | null
 }
 
-export default function DashboardClient({ firstName, upcomingExams, doneTasks, pendingTasks, streak }: DashboardClientProps) {
+export default function DashboardClient({
+  firstName, upcomingExams, doneTasks, pendingTasks, streak,
+  procrastinationGap, focusRatio,
+  lastSessionSubject, lastSessionDate,
+  lastFocusSubject, lastFocusDate,
+  nextTaskTitle, nextTaskDue,
+}: DashboardClientProps) {
   const [quoteIndex, setQuoteIndex] = useState(0)
   const [now, setNow] = useState(new Date())
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   useEffect(() => {
-    const qi = Math.floor(Date.now() / 30000) % QUOTES.length
-    setQuoteIndex(qi)
+    setQuoteIndex(Math.floor(Date.now() / 30000) % QUOTES.length)
     const interval = setInterval(() => {
       setQuoteIndex(Math.floor(Date.now() / 30000) % QUOTES.length)
       setNow(new Date())
@@ -61,10 +132,14 @@ export default function DashboardClient({ firstName, upcomingExams, doneTasks, p
     return () => clearInterval(interval)
   }, [])
 
+  // Sync sidebar open state to the sidebar element via custom event
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('sidebar-toggle', { detail: { open: sidebarOpen } }))
+  }, [sidebarOpen])
+
   const istOffset = 5.5 * 60 * 60 * 1000
   const istDate = new Date(now.getTime() + istOffset - now.getTimezoneOffset() * 60000)
   const hour = istDate.getUTCHours()
-
   const { greeting, iconType, sub } = getTimeGreeting(hour)
   const quote = QUOTES[quoteIndex]
 
@@ -72,50 +147,89 @@ export default function DashboardClient({ firstName, upcomingExams, doneTasks, p
     const days = Math.ceil((new Date(e.examDate).getTime() - Date.now()) / 86400000)
     return days >= 0 && days <= 3
   })
-
   const showAchievement = doneTasks > 0 && doneTasks % 5 === 0
 
+  const stats = [
+    {
+      label: 'Pending Tasks',
+      value: pendingTasks === 0 ? 'Done ✓' : String(pendingTasks),
+      color: pendingTasks === 0 ? '#10B981' : '#7bd0ff',
+      sub: nextTaskTitle ? `Next: ${nextTaskTitle}` : 'All caught up!',
+      subExtra: nextTaskDue ? `Due ${nextTaskDue}` : '',
+    },
+    {
+      label: 'Session Gap',
+      value: procrastinationGap === null ? '—' : procrastinationGap > 0 ? `+${procrastinationGap}m` : 'On time',
+      color: procrastinationGap === null ? '#958ea0' : procrastinationGap > 0 ? '#EF4444' : '#10B981',
+      sub: lastSessionSubject ?? 'No sessions yet',
+      subExtra: lastSessionDate ?? '',
+    },
+    {
+      label: 'Focus Ratio',
+      value: focusRatio === null ? '—' : `${focusRatio}%`,
+      color: focusRatio === null ? '#958ea0' : focusRatio >= 70 ? '#10B981' : focusRatio >= 40 ? '#F59E0B' : '#EF4444',
+      sub: lastFocusSubject ?? 'No logs yet',
+      subExtra: lastFocusDate ?? '',
+      bar: focusRatio,
+    },
+    {
+      label: 'Study Streak',
+      value: streak > 0 ? `${streak}d` : '—',
+      color: streak > 0 ? '#F59E0B' : '#958ea0',
+      sub: streak > 0 ? 'Keep it going!' : 'Start your streak today',
+      subExtra: '',
+    },
+  ]
+
   return (
-    <div className="space-y-4">
-      {/* Greeting + Quote */}
-      <div className="rounded-xl p-5" style={{
-        background: 'rgba(19,27,46,0.7)',
-        border: '1px solid rgba(51,65,85,0.4)',
-      }}>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <GreetingIcon type={iconType} size={20} />
-              <h1 className="text-xl font-bold tracking-tight" style={{ color: '#dfe2ee' }}>
-                {greeting}, {firstName}!
-              </h1>
-              {streak > 0 && (
-                <span className="inline-flex items-center gap-1 font-mono text-[10px] font-bold px-2 py-0.5 rounded-full"
-                  style={{ background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.3)', color: '#10B981' }}>
-                  <IconZap size={9} /> {streak}d streak
-                </span>
-              )}
-            </div>
-            <p className="text-sm" style={{ color: '#958ea0' }}>{sub}</p>
-          </div>
-          <div className="rounded-lg px-4 py-3 max-w-xs" style={{
-            background: 'rgba(139,92,246,0.08)',
-            border: '1px solid rgba(139,92,246,0.2)',
-          }}>
-            <p className="font-mono text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: '#8B5CF6' }}>Quote of the moment</p>
-            <p className="text-sm italic leading-relaxed" style={{ color: '#cbc3d7' }}>"{quote.text}"</p>
-            <p className="text-[10px] mt-1" style={{ color: '#958ea0' }}>— {quote.author}</p>
-          </div>
+    <div className="space-y-8">
+
+      {/* ── TOP NAV BAR ── */}
+      <div className="flex items-center justify-between">
+        {/* Sidebar toggle — only visible on desktop (lg+); mobile uses the fixed top bar */}
+        <button
+          onClick={() => setSidebarOpen(v => !v)}
+          className="hidden lg:flex items-center justify-center w-9 h-9 rounded-lg transition-all duration-150"
+          style={{
+            background: sidebarOpen ? 'rgba(139,92,246,0.2)' : 'rgba(255,255,255,0.05)',
+            border: sidebarOpen ? '1px solid rgba(139,92,246,0.4)' : '1px solid rgba(73,68,84,0.5)',
+            color: sidebarOpen ? '#d0bcff' : '#958ea0',
+          }}
+          aria-label="Toggle sidebar"
+          title="Toggle sidebar"
+        >
+          <IconMenu size={16} />
+        </button>
+
+        {/* Page title */}
+        <div className="flex items-center gap-2">
+          <GreetingIcon type={iconType} size={18} />
+          <h1 className="text-base font-bold tracking-tight" style={{ color: '#dfe2ee' }}>
+            {greeting}, <span style={{ color: '#d0bcff' }}>{firstName}</span>
+          </h1>
+          {streak > 0 && (
+            <span className="inline-flex items-center gap-1 font-mono text-[10px] font-bold px-2 py-0.5 rounded-full"
+              style={{ background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.3)', color: '#10B981' }}>
+              <IconZap size={9} />{streak}d streak
+            </span>
+          )}
+        </div>
+
+        {/* Quote pill */}
+        <div className="hidden sm:flex items-center gap-2 rounded-lg px-3 py-1.5 max-w-xs"
+          style={{ background: 'rgba(139,92,246,0.07)', border: '1px solid rgba(139,92,246,0.18)' }}>
+          <p className="font-mono text-[10px] italic truncate" style={{ color: '#cbc3d7' }}>"{quote.text}"</p>
         </div>
       </div>
 
-      {/* Urgent exam warning */}
+      {/* ── SUBTITLE ── */}
+      <p className="text-sm -mt-4" style={{ color: '#958ea0' }}>{sub}</p>
+
+      {/* ── ALERTS ── */}
       {urgentEvent && (
-        <div className="rounded-xl px-5 py-4 flex items-start gap-3" style={{
-          background: 'rgba(245,158,11,0.08)',
-          border: '1px solid rgba(245,158,11,0.3)',
-        }}>
-          <IconAlertTriangle size={18} style={{ color: '#F59E0B' }} className="shrink-0 mt-0.5" />
+        <div className="rounded-xl px-4 py-3 flex items-start gap-3"
+          style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.3)' }}>
+          <IconAlertTriangle size={16} style={{ color: '#F59E0B' }} className="shrink-0 mt-0.5" />
           <div>
             <p className="font-bold text-sm" style={{ color: '#F59E0B' }}>
               {Math.ceil((new Date(urgentEvent.examDate).getTime() - Date.now()) / 86400000) === 0
@@ -126,24 +240,76 @@ export default function DashboardClient({ firstName, upcomingExams, doneTasks, p
           </div>
         </div>
       )}
-
-      {/* Achievement */}
       {showAchievement && (
-        <div className="rounded-xl px-5 py-4 flex items-start gap-3" style={{
-          background: 'rgba(16,185,129,0.08)',
-          border: '1px solid rgba(16,185,129,0.3)',
-        }}>
-          <IconTrophy size={18} style={{ color: '#10B981' }} className="shrink-0 mt-0.5" />
-          <div>
-            <p className="font-bold text-sm" style={{ color: '#10B981' }}>
-              You've completed {doneTasks} task{doneTasks > 1 ? 's' : ''}!
-            </p>
-            <p className="text-xs mt-0.5" style={{ color: '#958ea0' }}>
-              {pendingTasks > 0 ? `${pendingTasks} more to go — keep the momentum!` : 'All caught up. Set new goals!'}
-            </p>
-          </div>
+        <div className="rounded-xl px-4 py-3 flex items-start gap-3"
+          style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.3)' }}>
+          <IconTrophy size={16} style={{ color: '#10B981' }} className="shrink-0 mt-0.5" />
+          <p className="font-bold text-sm" style={{ color: '#10B981' }}>
+            {doneTasks} tasks completed! {pendingTasks > 0 ? `${pendingTasks} to go — keep it up!` : 'All caught up!'}
+          </p>
         </div>
       )}
+
+      {/* ── STAT CARDS ── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {stats.map(s => (
+          <div key={s.label} className="rounded-xl p-4"
+            style={{ background: 'rgba(19,27,46,0.8)', border: '1px solid rgba(51,65,85,0.4)' }}>
+            <p className="font-mono text-[10px] font-bold uppercase tracking-widest mb-2"
+              style={{ color: '#494454' }}>{s.label}</p>
+            <p className="text-2xl font-bold font-mono tabular-nums leading-none"
+              style={{ color: s.color }}>{s.value}</p>
+            <p className="text-xs mt-1.5 truncate" style={{ color: '#cbc3d7' }}>{s.sub}</p>
+            {s.subExtra && (
+              <p className="font-mono text-[10px] mt-0.5" style={{ color: '#958ea0' }}>{s.subExtra}</p>
+            )}
+            {s.bar !== undefined && s.bar !== null && (
+              <div className="w-full rounded-full h-0.5 mt-2" style={{ background: 'rgba(73,68,84,0.4)' }}>
+                <div className="h-0.5 rounded-full"
+                  style={{ width: `${s.bar}%`, background: s.color }} />
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* ── FEATURES SECTION ── */}
+      <div>
+        <div className="flex items-center gap-3 mb-4">
+          <p className="font-mono text-[10px] font-bold uppercase tracking-widest"
+            style={{ color: '#494454' }}>Features</p>
+          <div className="flex-1 h-px" style={{ background: 'rgba(73,68,84,0.3)' }} />
+          <p className="font-mono text-[10px]" style={{ color: '#494454' }}>{features.length} tools</p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {features.map(f => (
+            <Link key={f.href} href={f.href}
+              className="group rounded-xl p-4 flex flex-col gap-3 transition-all duration-200 hover:scale-[1.01]"
+              style={{ background: f.accentBg, border: `1px solid ${f.accentBorder}` }}>
+              {/* Header row */}
+              <div className="flex items-start justify-between">
+                <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+                  style={{ background: 'rgba(0,0,0,0.25)', border: `1px solid ${f.accentBorder}` }}>
+                  <f.Icon size={17} style={{ color: f.accent }} />
+                </div>
+                <span className="font-mono text-[9px] font-bold px-1.5 py-0.5 rounded"
+                  style={{ background: 'rgba(0,0,0,0.3)', color: f.accent, letterSpacing: '0.08em' }}>
+                  {f.badge}
+                </span>
+              </div>
+              {/* Body */}
+              <div>
+                <p className="font-semibold text-sm leading-tight" style={{ color: '#dfe2ee' }}>{f.label}</p>
+                <p className="text-xs mt-1 leading-relaxed" style={{ color: '#958ea0' }}>{f.desc}</p>
+              </div>
+              {/* Footer arrow */}
+              <p className="font-mono text-[10px] font-bold transition-transform group-hover:translate-x-1"
+                style={{ color: f.accent }}>Open →</p>
+            </Link>
+          ))}
+        </div>
+      </div>
     </div>
   )
 }

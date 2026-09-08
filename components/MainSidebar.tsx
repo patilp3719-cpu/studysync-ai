@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useSession, signOut } from 'next-auth/react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   IconHome, IconClipboard, IconTimer, IconTarget, IconCalendar,
@@ -28,6 +28,16 @@ export default function MainSidebar() {
   const { data: session } = useSession()
   const router = useRouter()
   const [collapsed, setCollapsed] = useState(false)
+
+  // Listen for sidebar-toggle custom events dispatched from DashboardClient
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<{ open: boolean }>).detail
+      setCollapsed(!detail.open)
+    }
+    window.addEventListener('sidebar-toggle', handler)
+    return () => window.removeEventListener('sidebar-toggle', handler)
+  }, [])
   const [profileOpen, setProfileOpen] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
 
