@@ -1,10 +1,18 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 interface Card { q: string; a: string }
 
-const DECKS = [
+interface Deck {
+  id: string
+  name: string
+  icon: string
+  cards: Card[]
+  isUserDeck?: boolean
+}
+
+const PRESET_DECKS: Deck[] = [
   {
     id: 'js',
     name: 'JavaScript Basics',
@@ -68,6 +76,7 @@ const DECKS = [
 ]
 
 export default function GameFlashcardsPage() {
+  const [allDecks, setAllDecks] = useState<Deck[]>(PRESET_DECKS)
   const [selectedDeck, setSelectedDeck] = useState<string | null>(null)
   const [cardIndex, setCardIndex] = useState(0)
   const [flipped, setFlipped] = useState(false)
@@ -75,8 +84,30 @@ export default function GameFlashcardsPage() {
   const [done, setDone] = useState(false)
   const [shuffled, setShuffled] = useState<Card[]>([])
 
+  // Fetch user-created decks and merge with presets
+  useEffect(() => {
+    fetch('/api/flashcards')
+      .then(r => r.ok ? r.json() : [])
+      .then((userSets: { _id: string; subject: string; cards: string; icon?: string; playable?: boolean }[]) => {
+        const playable = userSets.filter(s => s.playable !== false)
+        const userDecks: Deck[] = playable.map(s => {
+          let cards: Card[] = []
+          try { cards = JSON.parse(s.cards) } catch {}
+          return {
+            id: `user-${s._id}`,
+            name: s.subject,
+            icon: s.icon || '📚',
+            cards,
+            isUserDeck: true,
+          }
+        }).filter(d => d.cards.length > 0)
+        setAllDecks([...PRESET_DECKS, ...userDecks])
+      })
+      .catch(() => {}) // unauthenticated or network — just use presets
+  }, [])
+
   function startDeck(id: string) {
-    const deck = DECKS.find(d => d.id === id)!
+    const deck = allDecks.find(d => d.id === id)!
     const sh = [...deck.cards].sort(() => Math.random() - 0.5)
     setShuffled(sh)
     setSelectedDeck(id)
@@ -95,15 +126,18 @@ export default function GameFlashcardsPage() {
 
   function restart() {
     if (!selectedDeck) return
-    const deck = DECKS.find(d => d.id === selectedDeck)!
+    const deck = allDecks.find(d => d.id === selectedDeck)!
     setShuffled([...deck.cards].sort(() => Math.random() - 0.5))
     setCardIndex(0); setFlipped(false); setScore({ know: 0, dontKnow: 0 }); setDone(false)
   }
 
-  const deck = selectedDeck ? DECKS.find(d => d.id === selectedDeck) : null
+  const deck = selectedDeck ? allDecks.find(d => d.id === selectedDeck) : null
   const card = shuffled[cardIndex]
   const total = score.know + score.dontKnow
   const pct = total > 0 ? Math.round((score.know / total) * 100) : 0
+
+  const presetDecks = allDecks.filter(d => !d.isUserDeck)
+  const userDecks   = allDecks.filter(d => d.isUserDeck)
 
   if (!selectedDeck) {
     return (
@@ -116,23 +150,60 @@ export default function GameFlashcardsPage() {
           <p className="text-gray-400 text-sm max-w-md mx-auto">Choose a deck and test your knowledge. Cards are shuffled every round!</p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {DECKS.map(d => (
-            <button key={d.id} onClick={() => startDeck(d.id)}
-              className="group text-left bg-gray-800/60 border border-gray-700/50 rounded-2xl p-5 hover:border-indigo-500/40 hover:bg-gray-800 transition-all duration-200">
-              <div className="flex items-start justify-between mb-3">
-                <span className="text-3xl">{d.icon}</span>
-                <span className="text-xs bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 rounded-full font-medium">{d.cards.length} cards</span>
-              </div>
-              <h2 className="font-bold text-white text-base mb-1">{d.name}</h2>
-              <p className="text-sm text-gray-400">Shuffled quiz · Test your knowledge</p>
-              <div className="mt-3 flex items-center gap-1 text-gray-500 text-xs group-hover:text-indigo-400 transition-colors">
-                <span>Start deck</span>
-                <span className="group-hover:translate-x-1 transition-transform">→</span>
-              </div>
-            </button>
-          ))}
+        {/* Preset decks */}
+        <div>
+          <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">Built-in Decks</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {presetDecks.map(d => (
+              <button key={d.id} onClick={() => startDeck(d.id)}
+                className="group text-left bg-gray-800/60 border border-gray-700/50 rounded-2xl p-5 hover:border-indigo-500/40 hover:bg-gray-800 transition-all duration-200">
+                <div className="flex items-start justify-between mb-3">
+                  <span className="text-3xl">{d.icon}</span>
+                  <span className="text-xs bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 rounded-full font-medium">{d.cards.length} cards</span>
+                </div>
+                <h2 className="font-bold text-white text-base mb-1">{d.name}</h2>
+                <p className="text-sm text-gray-400">Shuffled quiz · Test your knowledge</p>
+                <div className="mt-3 flex items-center gap-1 text-gray-500 text-xs group-hover:text-indigo-400 transition-colors">
+                  <span>Start deck</span>
+                  <span className="group-hover:translate-x-1 transition-transform">→</span>
+                </div>
+              </button>
+            ))}
+          </div>
         </div>
+
+        {/* User-created decks */}
+        {userDecks.length > 0 && (
+          <div>
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">Your Decks</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {userDecks.map(d => (
+                <button key={d.id} onClick={() => startDeck(d.id)}
+                  className="group text-left bg-gray-800/60 border border-purple-700/30 rounded-2xl p-5 hover:border-purple-500/50 hover:bg-gray-800 transition-all duration-200">
+                  <div className="flex items-start justify-between mb-3">
+                    <span className="text-3xl">{d.icon}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs bg-purple-500/20 text-purple-300 border border-purple-500/30 px-2 py-0.5 rounded-full font-medium">Custom</span>
+                      <span className="text-xs bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 rounded-full font-medium">{d.cards.length} cards</span>
+                    </div>
+                  </div>
+                  <h2 className="font-bold text-white text-base mb-1">{d.name}</h2>
+                  <p className="text-sm text-gray-400">Your AI-generated deck · Shuffled quiz</p>
+                  <div className="mt-3 flex items-center gap-1 text-gray-500 text-xs group-hover:text-purple-400 transition-colors">
+                    <span>Start deck</span>
+                    <span className="group-hover:translate-x-1 transition-transform">→</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {userDecks.length === 0 && (
+          <div className="text-center py-6 rounded-2xl bg-gray-800/30 border border-dashed border-gray-700">
+            <p className="text-gray-500 text-sm">Create flashcard decks in <strong className="text-purple-400">Flashcards</strong> to see them here.</p>
+          </div>
+        )}
       </div>
     )
   }
@@ -179,6 +250,9 @@ export default function GameFlashcardsPage() {
         </button>
         <div className="text-center">
           <p className="text-sm font-semibold text-white">{deck?.icon} {deck?.name}</p>
+          {deck?.isUserDeck && (
+            <span className="text-xs text-purple-400 font-medium">Your Deck</span>
+          )}
         </div>
         <div className="text-sm text-gray-400">{cardIndex + 1}/{shuffled.length}</div>
       </div>

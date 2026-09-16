@@ -71,7 +71,11 @@ function Ring({ done, total }: { done: number; total: number }) {
 export default function InterviewPrepPage() {
   const [topics, setTopics]   = useState<Topic[]>(loadTopics)
   const [plans, setPlans]     = useState<SavedAIPlan[]>(loadPlans)
-  const [aiPlan, setAiPlan]   = useState('')
+  // Show last saved plan inline by default
+  const [aiPlan, setAiPlan]   = useState(() => {
+    const saved = loadPlans()
+    return saved.length > 0 ? saved[0].content : ''
+  })
   const [aiLoading, setAiLoading] = useState(false)
   const [customTopic, setCustomTopic] = useState('')
 
@@ -191,6 +195,9 @@ export default function InterviewPrepPage() {
           <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-yellow-400 inline-block" /><span className="text-gray-400">{inProgCount} in progress</span></span>
           <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-gray-500 inline-block" /><span className="text-gray-400">{topics.length - doneCount - inProgCount} not started</span></span>
         </div>
+        {doneCount === 0 && inProgCount === 0 && (
+          <p className="text-xs text-gray-600 mt-3">Click any topic below to cycle its status: Not Started → In Progress → Done.</p>
+        )}
       </div>
 
       {/* ── AI Plan Section ── */}

@@ -151,31 +151,42 @@ export default function DashboardClient({
     {
       label: 'Pending Tasks',
       value: pendingTasks === 0 ? 'Done ✓' : String(pendingTasks),
-      color: pendingTasks === 0 ? '#10B981' : '#7bd0ff',
-      sub: nextTaskTitle ? `Next: ${nextTaskTitle}` : 'All caught up!',
-      subExtra: nextTaskDue ? `Due ${nextTaskDue}` : '',
+      // Green = done/on-track, Blue = neutral info
+      color: pendingTasks === 0 ? '#10B981' : '#3b82d4',
+      sub: nextTaskTitle ? `Next: ${nextTaskTitle}` : pendingTasks === 0 ? 'All caught up!' : 'Open Planner to see tasks',
+      subExtra: nextTaskDue ? `Due ${nextTaskDue}` : pendingTasks === 0 ? '' : '',
+      hint: pendingTasks === 0 && doneTasks === 0 ? 'Go to Planner to add your first task.' : undefined,
     },
     {
       label: 'Session Gap',
-      value: procrastinationGap === null ? '—' : procrastinationGap > 0 ? `+${procrastinationGap}m` : 'On time',
+      value: procrastinationGap === null ? '—' : procrastinationGap > 0 ? `+${procrastinationGap}m late` : 'On time',
+      // Red = overdue/late, Green = on-track
       color: procrastinationGap === null ? '#958ea0' : procrastinationGap > 0 ? '#EF4444' : '#10B981',
-      sub: lastSessionSubject ?? 'No sessions yet',
+      sub: procrastinationGap === null ? 'Log a session to track gaps'
+        : procrastinationGap > 0
+          ? `Started ${procrastinationGap}m later than planned`
+          : 'Started on time — great discipline!',
       subExtra: lastSessionDate ?? '',
+      hint: procrastinationGap === null ? 'Log a session in Sessions to start tracking.' : undefined,
     },
     {
       label: 'Focus Ratio',
       value: focusRatio === null ? '—' : `${focusRatio}%`,
+      // Green = focused, Red = distracted, Blue = neutral
       color: focusRatio === null ? '#958ea0' : focusRatio >= 70 ? '#10B981' : focusRatio >= 40 ? '#F59E0B' : '#EF4444',
-      sub: lastFocusSubject ?? 'No logs yet',
+      sub: focusRatio === null ? 'No focus data yet' : lastFocusSubject ?? 'No logs yet',
       subExtra: lastFocusDate ?? '',
       bar: focusRatio,
+      hint: focusRatio === null ? 'Complete a Pomodoro session to see your focus ratio.' : undefined,
     },
     {
       label: 'Study Streak',
       value: `${streak}d`,
+      // Green = active streak, muted = no streak
       color: streak > 0 ? '#F59E0B' : '#958ea0',
-      sub: streak > 0 ? 'Keep it going!' : 'Streak reset — log today!',
+      sub: streak > 0 ? `${streak} day${streak !== 1 ? 's' : ''} in a row — keep it going!` : 'Log today to start a new streak!',
       subExtra: '',
+      hint: streak === 0 ? 'Complete any Pomodoro session today to start your streak.' : undefined,
     },
   ]
 
@@ -213,11 +224,16 @@ export default function DashboardClient({
           )}
         </div>
 
-        {/* Quote pill */}
-        <div className="hidden sm:flex items-center gap-2 rounded-lg px-3 py-1.5 max-w-xs"
-          style={{ background: 'rgba(139,92,246,0.07)', border: '1px solid rgba(139,92,246,0.18)' }}>
-          <p className="font-mono text-[10px] italic truncate" style={{ color: '#cbc3d7' }}>"{quote.text}"</p>
-        </div>
+        {/* Quote pill — truncated with tooltip on hover */}
+          <div className="hidden sm:flex items-center gap-2 rounded-lg px-3 py-1.5 max-w-xs group relative"
+            style={{ background: 'rgba(139,92,246,0.07)', border: '1px solid rgba(139,92,246,0.18)' }}>
+            <p className="font-mono text-[10px] italic truncate" style={{ color: '#cbc3d7' }}>"{quote.text}"</p>
+            {/* Full quote tooltip */}
+            <span className="absolute z-50 bottom-full left-0 mb-2 hidden group-hover:block w-72 rounded-lg px-3 py-2 text-[11px] leading-snug shadow-xl"
+              style={{ background: 'rgba(10,14,22,0.97)', border: '1px solid rgba(73,68,84,0.6)', color: '#cbc3d7' }}>
+              "{quote.text}" — {quote.author}
+            </span>
+          </div>
       </div>
 
       {/* ── SUBTITLE ── */}
@@ -257,15 +273,18 @@ export default function DashboardClient({
               style={{ color: '#494454' }}>{s.label}</p>
             <p className="text-2xl font-bold font-mono tabular-nums leading-none"
               style={{ color: s.color }}>{s.value}</p>
-            <p className="text-xs mt-1.5 truncate" style={{ color: '#cbc3d7' }}>{s.sub}</p>
+            <p className="text-xs mt-1.5" style={{ color: '#cbc3d7' }}>{s.sub}</p>
             {s.subExtra && (
               <p className="font-mono text-[10px] mt-0.5" style={{ color: '#958ea0' }}>{s.subExtra}</p>
             )}
             {s.bar !== undefined && s.bar !== null && (
               <div className="w-full rounded-full h-0.5 mt-2" style={{ background: 'rgba(73,68,84,0.4)' }}>
-                <div className="h-0.5 rounded-full"
-                  style={{ width: `${s.bar}%`, background: s.color }} />
+                <div className="h-0.5 rounded-full" style={{ width: `${s.bar}%`, background: s.color }} />
               </div>
+            )}
+            {/* Empty-state hint — shown when value is zero/unknown */}
+            {'hint' in s && s.hint && (
+              <p className="font-mono text-[10px] mt-2 leading-snug" style={{ color: '#494454' }}>{s.hint}</p>
             )}
           </div>
         ))}
@@ -280,35 +299,49 @@ export default function DashboardClient({
           <p className="font-mono text-[10px]" style={{ color: '#494454' }}>{features.length} tools</p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {features.map(f => (
-            <Link key={f.href} href={f.href}
-              className="group block rounded-2xl p-5 hover:scale-[1.03] transition-all duration-200 shadow-lg"
-              style={{
-                background: `linear-gradient(135deg, ${f.gradFrom}, ${f.gradTo})`,
-                boxShadow: `0 8px 24px ${f.glow}`,
-              }}>
-              {/* Icon */}
-              <div className="text-4xl mb-3">{f.emoji}</div>
-              {/* Title + badge */}
-              <div className="flex items-center gap-2 mb-2">
-                <h3 className="text-base font-bold text-white">{f.label}</h3>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                  style={{ background: 'rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.9)' }}>
-                  {f.badge}
-                </span>
+        {/* Group features by subheading */}
+        {(
+          [
+            { heading: 'Plan', hrefs: ['/planner'] },
+            { heading: 'Track', hrefs: ['/sessions', '/analyzer', '/exams', '/reminders'] },
+            { heading: 'Focus', hrefs: ['/timer', '/flashcards'] },
+            { heading: 'Games & Dev', hrefs: ['/games', '/devzone'] },
+          ] as { heading: string; hrefs: string[] }[]
+        ).map(group => {
+          const groupFeatures = features.filter(f => group.hrefs.includes(f.href))
+          if (groupFeatures.length === 0) return null
+          return (
+            <div key={group.heading} className="mb-6">
+              <p className="font-mono text-[10px] font-bold uppercase tracking-widest mb-3"
+                style={{ color: '#8B5CF6' }}>{group.heading}</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {groupFeatures.map(f => (
+                  <Link key={f.href} href={f.href}
+                    className="group block rounded-2xl p-5 hover:scale-[1.03] transition-all duration-200 shadow-lg"
+                    style={{
+                      background: `linear-gradient(135deg, ${f.gradFrom}, ${f.gradTo})`,
+                      boxShadow: `0 8px 24px ${f.glow}`,
+                    }}>
+                    <div className="text-4xl mb-3">{f.emoji}</div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <h3 className="text-base font-bold text-white">{f.label}</h3>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                        style={{ background: 'rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.9)' }}>
+                        {f.badge}
+                      </span>
+                    </div>
+                    <p className="text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.7)' }}>{f.desc}</p>
+                    <div className="mt-4 flex items-center gap-1 text-xs transition-colors"
+                      style={{ color: 'rgba(255,255,255,0.55)' }}>
+                      <span className="group-hover:text-white transition-colors">Open</span>
+                      <span className="group-hover:translate-x-1 transition-transform">→</span>
+                    </div>
+                  </Link>
+                ))}
               </div>
-              {/* Desc */}
-              <p className="text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.7)' }}>{f.desc}</p>
-              {/* Arrow */}
-              <div className="mt-4 flex items-center gap-1 text-xs transition-colors"
-                style={{ color: 'rgba(255,255,255,0.55)' }}>
-                <span className="group-hover:text-white transition-colors">Open</span>
-                <span className="group-hover:translate-x-1 transition-transform">→</span>
-              </div>
-            </Link>
-          ))}
-        </div>
+            </div>
+          )
+        })}
       </div>
     </div>
   )

@@ -17,13 +17,17 @@ export async function GET() {
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   await connectDB()
-  const sessions = await StudySession.find({ userId: session.user.id })
-    .sort({ date: -1 })
-    .limit(14)
+  // Only manual sessions have planned/actual start times for procrastination analysis
+  const sessions = await StudySession.find({
+    userId: session.user.id,
+    source: 'manual',
+    plannedStart: { $exists: true, $ne: '' },
+    actualStart: { $exists: true, $ne: '' },
+  }).sort({ date: -1 }).limit(14)
 
   if (sessions.length === 0) {
     return NextResponse.json({
-      suggestion: 'No study sessions logged yet. Log some sessions to detect procrastination patterns.',
+      suggestion: 'No manually-logged sessions yet. Log sessions in the Sessions page to detect procrastination patterns.',
     })
   }
 

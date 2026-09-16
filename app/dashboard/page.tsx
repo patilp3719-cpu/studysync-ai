@@ -3,7 +3,6 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { connectDB } from '@/lib/db'
 import { Task } from '@/models/Task'
 import { StudySession } from '@/models/StudySession'
-import { FocusLog } from '@/models/FocusLog'
 import { Exam } from '@/models/Exam'
 import { redirect } from 'next/navigation'
 import DashboardClient from '@/components/DashboardClient'
@@ -19,42 +18,45 @@ export default async function DashboardPage() {
   const pendingTasks = allTasks.filter(t => t.status === 'pending')
   const doneTasks = allTasks.filter(t => t.status === 'done')
   const nextTask = pendingTasks[0] ?? null
-  const lastSession = await StudySession.findOne({ userId }).sort({ date: -1 })
-  const lastFocusLog = await FocusLog.findOne({ userId }).sort({ date: -1 })
-  const upcomingExams = await Exam.find({ userId }).sort({ examDate: 1 }).limit(3)
 
+  // Unified session data: manual sessions carry planned/actual times; timer-auto carry focus minutes
+  const allSessions = await StudySession.find({ userId }).sort({ date: -1, createdAt: -1 })
+
+  // Procrastination gap from the last *manual* session that has both planned and actual times
+  const lastManualSession = allSessions.find(s => s.plannedStart && s.actualStart && !s.skipped)
   let procrastinationGap: number | null = null
-  if (lastSession) {
+  if (lastManualSession) {
     const toMin = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + m }
-    procrastinationGap = toMin(lastSession.actualStart) - toMin(lastSession.plannedStart)
+    procrastinationGap = toMin(lastManualSession.actualStart) - toMin(lastManualSession.plannedStart)
   }
 
+  // Focus ratio from the most recent session that has focus minutes
+  const lastFocusSession = allSessions.find(s => (s.focusedMinutes ?? 0) > 0 || (s.distractedMinutes ?? 0) > 0)
   let focusRatio: number | null = null
-  if (lastFocusLog) {
-    const total = lastFocusLog.focusedMinutes + lastFocusLog.distractedMinutes
-    focusRatio = total > 0 ? Math.round((lastFocusLog.focusedMinutes / total) * 100) : 0
+  if (lastFocusSession) {
+    const total = (lastFocusSession.focusedMinutes ?? 0) + (lastFocusSession.distractedMinutes ?? 0)
+    focusRatio = total > 0 ? Math.round(((lastFocusSession.focusedMinutes ?? 0) / total) * 100) : 0
   }
 
-  const allLogs = await FocusLog.find({ userId }).sort({ date: -1 })
+  // Streak: consecutive days with at least one session (any type)
   let streak = 0
-  if (allLogs.length > 0) {
-    const uniqueDates = [...new Set(allLogs.map(l => l.date))].sort().reverse()
-    const today = new Date().toISOString().split('T')[0]
+  if (allSessions.length > 0) {
+    const uniqueDates = [...new Set(allSessions.map(s => s.date))].sort().reverse()
+    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' })
     let checkDate = today
     for (const d of uniqueDates) {
       if (d === checkDate) {
         streak++
-        const prev = new Date(checkDate)
-        prev.setDate(prev.getDate() - 1)
+        const prev = new Date(checkDate); prev.setDate(prev.getDate() - 1)
         checkDate = prev.toISOString().split('T')[0]
       } else break
     }
   }
 
-  const examsForClient = upcomingExams.map(e => ({
-    subject: e.subject,
-    examDate: e.examDate,
-  }))
+  const upcomingExams = await Exam.find({ userId }).sort({ examDate: 1 }).limit(3)
+  const examsForClient = upcomingExams.map(e => ({ subject: e.subject, examDate: e.examDate }))
+
+  const lastSession = allSessions[0] ?? null
 
   return (
     <DashboardClient
@@ -67,8 +69,8 @@ export default async function DashboardPage() {
       focusRatio={focusRatio}
       lastSessionSubject={lastSession?.subject ?? null}
       lastSessionDate={lastSession?.date ?? null}
-      lastFocusSubject={lastFocusLog?.subject ?? null}
-      lastFocusDate={lastFocusLog?.date ?? null}
+      lastFocusSubject={lastFocusSession?.subject ?? null}
+      lastFocusDate={lastFocusSession?.date ?? null}
       nextTaskTitle={nextTask?.title ?? null}
       nextTaskDue={nextTask?.dueDate ?? null}
     />

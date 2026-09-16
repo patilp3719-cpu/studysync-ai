@@ -99,6 +99,7 @@ export default function CountdownPage() {
   const [editChecklistContent, setEditChecklistContent] = useState('')
   const [filterType, setFilterType] = useState<string>('all')
   const [savingStep, setSavingStep] = useState<string | null>(null)   // eventId being saved
+  const [showPast, setShowPast] = useState(false)
 
   const loadEvents = useCallback(async () => {
     const res = await fetch('/api/exams')
@@ -187,7 +188,8 @@ export default function CountdownPage() {
   }
 
   const upcoming = events.filter(e => daysUntil(e.examDate) >= 0)
-  const filtered = filterType === 'all' ? events : events.filter(e => (e.eventType || 'exam') === filterType)
+  const pastEvents = events.filter(e => daysUntil(e.examDate) < 0)
+  const filtered = filterType === 'all' ? upcoming : upcoming.filter(e => (e.eventType || 'exam') === filterType)
   const getTypeConfig = (type: string) => EVENT_TYPES.find(t => t.value === type) || EVENT_TYPES[EVENT_TYPES.length - 1]
 
   return (
@@ -196,7 +198,7 @@ export default function CountdownPage() {
       {/* ── Header ── */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">📅 Countdown Board</h1>
+          <h1 className="text-2xl font-bold text-gray-800">📅 Countdown</h1>
           <p className="text-sm text-gray-500 mt-1">Track exams, interviews & deadlines with AI prep plans. Check off steps as you go.</p>
         </div>
         <div className="flex items-center gap-2">
@@ -536,6 +538,42 @@ export default function CountdownPage() {
               </div>
             )
           })}
+        </div>
+      )}
+
+      {/* ── Past Events (collapsed) ── */}
+      {pastEvents.length > 0 && (
+        <div>
+          <button onClick={() => setShowPast(v => !v)}
+            className="flex items-center gap-2 text-sm font-semibold text-gray-400 hover:text-gray-600 transition mb-3">
+            <span>{showPast ? '▼' : '▶'}</span>
+            Past Events ({pastEvents.length})
+          </button>
+          {showPast && (
+            <div className="space-y-3 opacity-60">
+              {pastEvents.map(event => {
+                const days = daysUntil(event.examDate)
+                const typeConf = getTypeConfig(event.eventType || 'exam')
+                return (
+                  <div key={event._id}
+                    className="bg-gray-100 border border-gray-200 rounded-2xl p-4 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className="text-xl shrink-0">{typeConf.icon}</span>
+                      <div className="min-w-0">
+                        <p className="font-semibold text-sm text-gray-600 truncate">{event.subject}</p>
+                        <p className="text-xs text-gray-400">{new Date(event.examDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })} · Passed {Math.abs(days)}d ago</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-gray-200 text-gray-500">Passed</span>
+                      <button onClick={() => handleDelete(event._id)}
+                        className="text-xs text-gray-400 hover:text-red-500 transition">✕</button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </div>
       )}
     </div>

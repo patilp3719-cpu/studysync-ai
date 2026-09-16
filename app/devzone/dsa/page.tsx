@@ -205,19 +205,72 @@ export default function DSAPage() {
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      {/* Stats — 5 cards including Medium */}
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         {[
           { label: 'Total Solved', value: problems.length,                                          color: 'text-cyan-400',   bg: 'bg-cyan-500/10 border-cyan-500/20' },
           { label: 'Day Streak',   value: streak,                                                   color: 'text-orange-400', bg: 'bg-orange-500/10 border-orange-500/20' },
           { label: 'Easy',         value: problems.filter(p => p.difficulty === 'easy').length,     color: 'text-green-400',  bg: 'bg-green-500/10 border-green-500/20' },
+          { label: 'Medium',       value: problems.filter(p => p.difficulty === 'medium').length,   color: 'text-yellow-400', bg: 'bg-yellow-500/10 border-yellow-500/20' },
           { label: 'Hard',         value: problems.filter(p => p.difficulty === 'hard').length,     color: 'text-red-400',    bg: 'bg-red-500/10 border-red-500/20' },
         ].map(s => (
           <div key={s.label} className={`rounded-2xl border p-4 text-center ${s.bg}`}>
             <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
             <p className="text-xs text-gray-500 mt-1">{s.label}</p>
+            {s.value === 0 && s.label === 'Total Solved' && (
+              <p className="text-[10px] text-gray-600 mt-1">Log your first problem below</p>
+            )}
           </div>
         ))}
+      </div>
+
+      {/* ── AI Suggestion Section — moved above log form as a key differentiator ── */}
+      <div className="bg-gray-800/60 border border-gray-700/50 rounded-2xl overflow-hidden">
+        <div className="px-5 py-4 flex items-center justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-bold text-gray-200">AI Topic Suggestion</h2>
+            <p className="text-xs text-gray-500 mt-0.5">AI analyses your solved problems and tells you what to study next.</p>
+          </div>
+          <button onClick={getAISuggestion} disabled={aiLoading || problems.length === 0}
+            className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-xl text-xs font-bold disabled:opacity-40 transition shrink-0">
+            {aiLoading ? 'Analyzing...' : problems.length === 0 ? 'Log problems first' : 'Get Suggestion'}
+          </button>
+        </div>
+
+        {problems.length === 0 && (
+          <div className="px-5 pb-4">
+            <p className="text-xs text-gray-600">Log your first DSA problem below to enable AI suggestions.</p>
+          </div>
+        )}
+
+        {aiSuggestion && (
+          <div className="border-t border-gray-700/50">
+            <div className="px-5 py-3 bg-gray-800/80 flex items-center justify-between gap-3 flex-wrap">
+              <p className="text-xs font-bold text-purple-400 uppercase tracking-widest">AI Suggestion</p>
+              <div className="flex items-center gap-2">
+                {savedMsg && <span className="text-xs text-green-400 font-semibold">{savedMsg}</span>}
+                <button onClick={() => setShowSaveForm(v => !v)}
+                  className="text-xs bg-gray-700 hover:bg-gray-600 text-gray-200 border border-gray-600 px-3 py-1.5 rounded-lg transition font-semibold">
+                  {showSaveForm ? 'Cancel' : 'Save Plan'}
+                </button>
+              </div>
+            </div>
+            {showSaveForm && (
+              <div className="px-5 py-3 bg-gray-800/60 border-b border-gray-700/50 flex gap-2">
+                <input type="text" value={saveTitle} onChange={e => setSaveTitle(e.target.value)}
+                  placeholder="Plan title (e.g. Week 3 DSA Focus)"
+                  className="flex-1 bg-gray-700 border border-gray-600 text-gray-100 placeholder-gray-500 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500" />
+                <button onClick={handleSavePlan} disabled={!saveTitle.trim()}
+                  className="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded-lg text-sm font-bold disabled:opacity-40 transition">
+                  Save
+                </button>
+              </div>
+            )}
+            <div className="px-5 py-4 bg-purple-500/5">
+              <MarkdownRenderer content={aiSuggestion} />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Add form */}
@@ -258,54 +311,6 @@ export default function DSAPage() {
           </form>
         </div>
       )}
-
-      {/* ── AI Suggestion Section ── */}
-      <div className="bg-gray-800/60 border border-gray-700/50 rounded-2xl overflow-hidden">
-        <div className="px-5 py-4 flex items-center justify-between gap-3">
-          <div>
-            <h2 className="text-sm font-bold text-gray-200">AI Topic Suggestion</h2>
-            <p className="text-xs text-gray-500 mt-0.5">AI analyses your solved problems and tells you what to study next.</p>
-          </div>
-          <button onClick={getAISuggestion} disabled={aiLoading || problems.length === 0}
-            className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-xl text-xs font-bold disabled:opacity-40 transition shrink-0">
-            {aiLoading ? 'Analyzing...' : 'Get Suggestion'}
-          </button>
-        </div>
-
-        {aiSuggestion && (
-          <div className="border-t border-gray-700/50">
-            {/* Action bar */}
-            <div className="px-5 py-3 bg-gray-800/80 flex items-center justify-between gap-3 flex-wrap">
-              <p className="text-xs font-bold text-purple-400 uppercase tracking-widest">AI Suggestion</p>
-              <div className="flex items-center gap-2">
-                {savedMsg && <span className="text-xs text-green-400 font-semibold">{savedMsg}</span>}
-                <button onClick={() => setShowSaveForm(v => !v)}
-                  className="text-xs bg-gray-700 hover:bg-gray-600 text-gray-200 border border-gray-600 px-3 py-1.5 rounded-lg transition font-semibold">
-                  {showSaveForm ? 'Cancel' : 'Save Plan'}
-                </button>
-              </div>
-            </div>
-
-            {/* Save form */}
-            {showSaveForm && (
-              <div className="px-5 py-3 bg-gray-800/60 border-b border-gray-700/50 flex gap-2">
-                <input type="text" value={saveTitle} onChange={e => setSaveTitle(e.target.value)}
-                  placeholder="Plan title (e.g. Week 3 DSA Focus)"
-                  className="flex-1 bg-gray-700 border border-gray-600 text-gray-100 placeholder-gray-500 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500" />
-                <button onClick={handleSavePlan} disabled={!saveTitle.trim()}
-                  className="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded-lg text-sm font-bold disabled:opacity-40 transition">
-                  Save
-                </button>
-              </div>
-            )}
-
-            {/* AI content */}
-            <div className="px-5 py-4 bg-purple-500/5">
-              <MarkdownRenderer content={aiSuggestion} />
-            </div>
-          </div>
-        )}
-      </div>
 
       {/* ── Saved Plans ── */}
       {showPlans && (

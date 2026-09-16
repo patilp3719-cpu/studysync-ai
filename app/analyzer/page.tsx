@@ -3,16 +3,21 @@
 import { useEffect, useState, useCallback } from 'react'
 import { MarkdownRenderer } from '@/components/MarkdownRenderer'
 
-const TASK_CATEGORIES = [
-  'DSA / Algorithms', 'Web Development', 'System Design', 'Machine Learning / AI',
-  'Database / SQL', 'DevOps / Cloud', 'Mobile Development', 'Open Source',
-  'Project Work', 'Interview Prep', 'Reading / Research', 'Other',
-]
-
-interface FocusLog {
-  _id: string; date: string; subject: string
-  focusedMinutes: number; distractedMinutes: number; notes?: string
+// Unified session shape — matches the extended StudySession model
+interface StudySession {
+  _id: string
+  subject: string
+  date: string
+  focusedMinutes: number
+  distractedMinutes: number
+  notes?: string
+  source: 'manual' | 'timer-auto'
+  plannedStart?: string
+  plannedEnd?: string
+  actualStart?: string
+  actualEnd?: string
 }
+
 interface ChecklistItem { id: string; text: string; done: boolean }
 interface AnalysisPlan {
   _id: string; title: string; content: string
@@ -64,6 +69,7 @@ const btnBase: React.CSSProperties = {
 }
 
 function FocusBar({ ratio }: { ratio: number }) {
+  // Green = focused/on-track, Red = distracted/low
   const color = ratio >= 70 ? '#10B981' : ratio >= 40 ? '#F59E0B' : '#EF4444'
   return (
     <div className="w-full rounded-full h-1.5 mt-1" style={{ background: 'rgba(73,68,84,0.4)' }}>
@@ -73,9 +79,9 @@ function FocusBar({ ratio }: { ratio: number }) {
 }
 
 function RatioBadge({ ratio }: { ratio: number }) {
-  const color = ratio >= 70 ? '#10B981' : ratio >= 40 ? '#F59E0B' : '#EF4444'
-  const bg = ratio >= 70 ? 'rgba(16,185,129,0.15)' : ratio >= 40 ? 'rgba(245,158,11,0.15)' : 'rgba(239,68,68,0.15)'
-  const border = ratio >= 70 ? 'rgba(16,185,129,0.3)' : ratio >= 40 ? 'rgba(245,158,11,0.3)' : 'rgba(239,68,68,0.3)'
+  const color  = ratio >= 70 ? '#10B981' : ratio >= 40 ? '#F59E0B' : '#EF4444'
+  const bg     = ratio >= 70 ? 'rgba(16,185,129,0.15)' : ratio >= 40 ? 'rgba(245,158,11,0.15)' : 'rgba(239,68,68,0.15)'
+  const border = ratio >= 70 ? 'rgba(16,185,129,0.3)'  : ratio >= 40 ? 'rgba(245,158,11,0.3)'  : 'rgba(239,68,68,0.3)'
   return (
     <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded"
       style={{ background: bg, color, border: `1px solid ${border}` }}>
@@ -87,70 +93,84 @@ function RatioBadge({ ratio }: { ratio: number }) {
 function ProgressRing({ done, total }: { done: number; total: number }) {
   if (total === 0) return null
   const pct = Math.round((done / total) * 100)
-  const color = pct === 100 ? '#10B981' : pct >= 50 ? '#F59E0B' : '#7bd0ff'
-  const bg = pct === 100 ? 'rgba(16,185,129,0.15)' : pct >= 50 ? 'rgba(245,158,11,0.15)' : 'rgba(123,208,255,0.15)'
-  const border = pct === 100 ? 'rgba(16,185,129,0.3)' : pct >= 50 ? 'rgba(245,158,11,0.3)' : 'rgba(123,208,255,0.3)'
+  const color  = pct === 100 ? '#10B981' : pct >= 50 ? '#F59E0B' : '#7bd0ff'
+  const bg     = pct === 100 ? 'rgba(16,185,129,0.15)' : pct >= 50 ? 'rgba(245,158,11,0.15)' : 'rgba(123,208,255,0.15)'
+  const border = pct === 100 ? 'rgba(16,185,129,0.3)'  : pct >= 50 ? 'rgba(245,158,11,0.3)'  : 'rgba(123,208,255,0.3)'
   return (
     <div className="flex items-center gap-1.5 font-mono text-[10px] font-bold">
       <span style={{ color }}>{done}/{total} steps done</span>
-      <span className="px-1.5 py-0.5 rounded"
-        style={{ background: bg, color, border: `1px solid ${border}` }}>{pct}%</span>
+      <span className="px-1.5 py-0.5 rounded" style={{ background: bg, color, border: `1px solid ${border}` }}>{pct}%</span>
+    </div>
+  )
+}
+
+/** Per-subject aggregate row in the breakdown table */
+function SubjectRow({ subject, sessions }: { subject: string; sessions: StudySession[] }) {
+  const totalFocus = sessions.reduce((s, r) => s + (r.focusedMinutes || 0), 0)
+  const totalDistract = sessions.reduce((s, r) => s + (r.distractedMinutes || 0), 0)
+  const ratio = focusRatio(totalFocus, totalDistract)
+  return (
+    <div className="rounded-xl p-3 flex flex-col sm:flex-row sm:items-center gap-3"
+      style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(73,68,84,0.3)' }}>
+      <div className="flex-1 min-w-0">
+        <p className="font-semibold text-sm truncate" style={{ color: '#dfe2ee' }}>{subject}</p>
+        <p className="font-mono text-[10px] mt-0.5" style={{ color: '#958ea0' }}>{sessions.length} session{sessions.length !== 1 ? 's' : ''}</p>
+        <FocusBar ratio={ratio} />
+      </div>
+      <div className="flex gap-4 shrink-0">
+        <div className="text-center">
+          <p className="font-bold font-mono tabular-nums text-sm" style={{ color: '#10B981' }}>{totalFocus}</p>
+          <p className="font-mono text-[10px]" style={{ color: '#958ea0' }}>focused</p>
+        </div>
+        <div className="text-center">
+          <p className="font-bold font-mono tabular-nums text-sm" style={{ color: '#EF4444' }}>{totalDistract}</p>
+          <p className="font-mono text-[10px]" style={{ color: '#958ea0' }}>distracted</p>
+        </div>
+        <RatioBadge ratio={ratio} />
+      </div>
     </div>
   )
 }
 
 export default function AnalyzerPage() {
-  const [logs, setLogs] = useState<FocusLog[]>([])
-  const [date, setDate] = useState('')
-  const [category, setCategory] = useState(TASK_CATEGORIES[0])
-  const [focusedMinutes, setFocusedMinutes] = useState('')
-  const [distractedMinutes, setDistractedMinutes] = useState('')
-  const [notes, setNotes] = useState('')
-  const [formError, setFormError] = useState('')
-  const [showForm, setShowForm] = useState(false)
+  const [sessions, setSessions] = useState<StudySession[]>([])
+  const [loading, setLoading] = useState(true)
 
   const [suggestion, setSuggestion] = useState('')
-  const [aiLoading, setAiLoading] = useState(false)
-  const [aiError, setAiError] = useState('')
+  const [aiLoading, setAiLoading]   = useState(false)
+  const [aiError, setAiError]       = useState('')
 
   const [showSaveForm, setShowSaveForm] = useState(false)
-  const [saveTitle, setSaveTitle] = useState('')
-  const [saving, setSaving] = useState(false)
-  const [savedMsg, setSavedMsg] = useState('')
+  const [saveTitle, setSaveTitle]   = useState('')
+  const [saving, setSaving]         = useState(false)
+  const [savedMsg, setSavedMsg]     = useState('')
 
-  const [plans, setPlans] = useState<AnalysisPlan[]>([])
+  const [plans, setPlans]         = useState<AnalysisPlan[]>([])
   const [showPlans, setShowPlans] = useState(false)
-
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editTitle, setEditTitle] = useState('')
   const [editContent, setEditContent] = useState('')
-  const [editSaving, setEditSaving] = useState(false)
-  const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [editSaving, setEditSaving]   = useState(false)
+  const [expandedId, setExpandedId]   = useState<string | null>(null)
 
-  const loadLogs = useCallback(async () => {
-    const res = await fetch('/api/focus-logs')
-    if (res.ok) setLogs(await res.json())
+  // Only sessions that have focus-tracking data (timer-auto or manual with minutes > 0)
+  const loadSessions = useCallback(async () => {
+    setLoading(true)
+    const res = await fetch('/api/sessions')
+    if (res.ok) {
+      const all: StudySession[] = await res.json()
+      // include timer-auto sessions and manual sessions that have focus minutes
+      setSessions(all.filter(s => s.source === 'timer-auto' || s.focusedMinutes > 0 || s.distractedMinutes > 0))
+    }
+    setLoading(false)
   }, [])
+
   const loadPlans = useCallback(async () => {
     const res = await fetch('/api/analysis-plans')
     if (res.ok) setPlans(await res.json())
   }, [])
-  useEffect(() => { loadLogs(); loadPlans() }, [loadLogs, loadPlans])
 
-  async function handleLog(e: React.FormEvent) {
-    e.preventDefault(); setFormError('')
-    const res = await fetch('/api/focus-logs', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ date, subject: category, focusedMinutes, distractedMinutes, notes }),
-    })
-    if (res.ok) {
-      setDate(''); setCategory(TASK_CATEGORIES[0]); setFocusedMinutes('')
-      setDistractedMinutes(''); setNotes(''); setShowForm(false); loadLogs()
-    } else {
-      const data = await res.json()
-      setFormError(data.error || 'Failed to log session')
-    }
-  }
+  useEffect(() => { loadSessions(); loadPlans() }, [loadSessions, loadPlans])
 
   async function handleAnalyze() {
     setAiLoading(true); setAiError(''); setSuggestion(''); setSavedMsg(''); setShowSaveForm(false)
@@ -171,7 +191,7 @@ export default function AnalyzerPage() {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         title: saveTitle.trim(), content: suggestion, checklistItems,
-        source: `Focus Analysis — ${logs.length} session${logs.length !== 1 ? 's' : ''}`,
+        source: `Focus Analysis — ${sessions.length} session${sessions.length !== 1 ? 's' : ''}`,
       }),
     })
     setSaving(false)
@@ -208,9 +228,50 @@ export default function AnalyzerPage() {
     loadPlans()
   }
 
-  const overallRatio = logs.length > 0
-    ? focusRatio(logs.reduce((s, l) => s + l.focusedMinutes, 0), logs.reduce((s, l) => s + l.distractedMinutes, 0))
-    : null
+  // ── Derived analytics ──────────────────────────────────────────────────────
+  const totalFocused    = sessions.reduce((s, r) => s + (r.focusedMinutes || 0), 0)
+  const totalDistracted = sessions.reduce((s, r) => s + (r.distractedMinutes || 0), 0)
+  const overallRatio    = focusRatio(totalFocused, totalDistracted)
+
+  // Streak: consecutive days (most recent first) with at least one session
+  const streak = (() => {
+    const dates = [...new Set(sessions.map(s => s.date))].sort().reverse()
+    let s = 0; let check = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' })
+    for (const d of dates) {
+      if (d === check) {
+        s++
+        const prev = new Date(check); prev.setDate(prev.getDate() - 1)
+        check = prev.toISOString().split('T')[0]
+      } else break
+    }
+    return s
+  })()
+
+  // Top 5 subjects by total focus minutes
+  const subjectMap = new Map<string, StudySession[]>()
+  sessions.forEach(s => {
+    const arr = subjectMap.get(s.subject) ?? []
+    arr.push(s)
+    subjectMap.set(s.subject, arr)
+  })
+  const subjectRows = [...subjectMap.entries()]
+    .map(([subj, rows]) => ({ subj, rows, total: rows.reduce((a, r) => a + (r.focusedMinutes || 0), 0) }))
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 5)
+
+  // Last 7 days daily focus summary
+  const last7: { date: string; focused: number; distracted: number }[] = []
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i)
+    const dateStr = d.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' })
+    const dayRows = sessions.filter(s => s.date === dateStr)
+    last7.push({
+      date: dateStr,
+      focused: dayRows.reduce((a, r) => a + (r.focusedMinutes || 0), 0),
+      distracted: dayRows.reduce((a, r) => a + (r.distractedMinutes || 0), 0),
+    })
+  }
+  const maxBar = Math.max(...last7.map(d => d.focused + d.distracted), 1)
 
   return (
     <div className="space-y-6">
@@ -218,8 +279,10 @@ export default function AnalyzerPage() {
       {/* ── Header ── */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold tracking-tight" style={{ color: '#dfe2ee' }}>Study vs Distraction Analyzer</h1>
-          <p className="text-sm mt-1" style={{ color: '#958ea0' }}>Track your focus time vs distraction. Save AI plans and follow your progress.</p>
+          <h1 className="text-xl font-bold tracking-tight" style={{ color: '#dfe2ee' }}>Focus Analyzer</h1>
+          <p className="text-sm mt-1" style={{ color: '#958ea0' }}>
+            Analytics over all your study sessions — Timer auto-logs included. Save AI plans and track progress.
+          </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {plans.length > 0 && (
@@ -228,158 +291,190 @@ export default function AnalyzerPage() {
               {showPlans ? '▲ Hide Plans' : `📋 My Plans (${plans.length})`}
             </button>
           )}
-          <button onClick={() => setShowForm(v => !v)}
-            style={{ ...btnBase, background: showForm ? 'rgba(255,255,255,0.07)' : '#3b82f6', color: showForm ? '#cbc3d7' : '#fff' }}>
-            {showForm ? '✕ Hide Form' : '+ Log Session'}
-          </button>
         </div>
       </div>
 
-      {/* ── Overall Stats Banner ── */}
-      {overallRatio !== null && (
-        <div className="rounded-xl p-4 flex flex-col sm:flex-row sm:items-center gap-4"
-          style={{ background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.25)' }}>
-          <div className="flex-1">
-            <p className="font-mono text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: '#958ea0' }}>
-              Overall Focus Ratio ({logs.length} sessions)
-            </p>
-            <div className="flex items-center gap-3">
-              <span className="text-3xl font-bold font-mono tabular-nums"
-                style={{ color: overallRatio >= 70 ? '#10B981' : overallRatio >= 40 ? '#F59E0B' : '#EF4444' }}>
-                {overallRatio}%
+      {/* ── Empty state ── */}
+      {!loading && sessions.length === 0 && (
+        <div className="text-center py-14 rounded-xl" style={{ border: '1px dashed rgba(73,68,84,0.5)' }}>
+          <p className="text-3xl mb-3">🎯</p>
+          <p className="text-sm font-semibold mb-1" style={{ color: '#dfe2ee' }}>No focus data yet</p>
+          <p className="text-xs" style={{ color: '#958ea0' }}>
+            Complete a Pomodoro session in <strong style={{ color: '#d0bcff' }}>Timer</strong> — it auto-logs here.
+            Or log a session manually in <strong style={{ color: '#d0bcff' }}>Sessions</strong>.
+          </p>
+        </div>
+      )}
+
+      {/* ── Summary Stats ── */}
+      {sessions.length > 0 && (
+        <>
+          {/* Overall ratio banner */}
+          <div className="rounded-xl p-4 flex flex-col sm:flex-row sm:items-center gap-4"
+            style={{ background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.25)' }}>
+            <div className="flex-1">
+              <p className="font-mono text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: '#958ea0' }}>
+                Overall Focus Ratio — {sessions.length} session{sessions.length !== 1 ? 's' : ''}
+              </p>
+              <div className="flex items-center gap-3">
+                <span className="text-3xl font-bold font-mono tabular-nums"
+                  style={{ color: overallRatio >= 70 ? '#10B981' : overallRatio >= 40 ? '#F59E0B' : '#EF4444' }}>
+                  {overallRatio}%
+                </span>
+                <div className="flex-1">
+                  <FocusBar ratio={overallRatio} />
+                  <p className="font-mono text-[10px] mt-1" style={{ color: '#958ea0' }}>
+                    {overallRatio >= 70 ? '🔥 Great focus! Keep it up.' : overallRatio >= 40 ? '⚡ Decent — room to improve.' : '⚠️ High distraction. Check AI tips below.'}
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-6 shrink-0">
+              <div className="text-center">
+                <p className="text-2xl font-bold font-mono tabular-nums" style={{ color: '#10B981' }}>{totalFocused}</p>
+                <p className="font-mono text-[10px]" style={{ color: '#958ea0' }}>focused min</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-bold font-mono tabular-nums" style={{ color: '#EF4444' }}>{totalDistracted}</p>
+                <p className="font-mono text-[10px]" style={{ color: '#958ea0' }}>distracted min</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-bold font-mono tabular-nums" style={{ color: '#F59E0B' }}>{streak}d</p>
+                <p className="font-mono text-[10px]" style={{ color: '#958ea0' }}>streak</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Last 7 days bar chart */}
+          <div style={cardStyle}>
+            <p className="font-mono text-[10px] font-bold uppercase tracking-widest mb-4" style={{ color: '#958ea0' }}>Last 7 Days</p>
+            <div className="flex items-end gap-1 h-24">
+              {last7.map(day => {
+                const focusPct  = day.focused   / maxBar * 100
+                const distPct   = day.distracted / maxBar * 100
+                const label     = new Date(day.date).toLocaleDateString('en-IN', { weekday: 'short' })
+                return (
+                  <div key={day.date} className="flex-1 flex flex-col items-center gap-0.5">
+                    <div className="w-full flex flex-col justify-end" style={{ height: '80px' }}>
+                      {focusPct > 0 && (
+                        <div className="w-full rounded-t transition-all"
+                          style={{ height: `${focusPct}%`, background: '#10B981', minHeight: 2 }}
+                          title={`${day.date}: ${day.focused}m focused`} />
+                      )}
+                      {distPct > 0 && (
+                        <div className="w-full rounded-b transition-all"
+                          style={{ height: `${distPct}%`, background: '#EF4444', opacity: 0.6, minHeight: 2 }}
+                          title={`${day.date}: ${day.distracted}m distracted`} />
+                      )}
+                      {focusPct === 0 && distPct === 0 && (
+                        <div className="w-full rounded" style={{ height: 3, background: 'rgba(73,68,84,0.3)' }} />
+                      )}
+                    </div>
+                    <p className="font-mono text-[9px]" style={{ color: '#958ea0' }}>{label}</p>
+                  </div>
+                )
+              })}
+            </div>
+            <div className="flex items-center gap-3 mt-2">
+              <span className="flex items-center gap-1 font-mono text-[10px]" style={{ color: '#10B981' }}>
+                <span className="w-2 h-2 rounded-sm inline-block" style={{ background: '#10B981' }} />Focused
               </span>
-              <div className="flex-1">
-                <FocusBar ratio={overallRatio} />
-                <p className="font-mono text-[10px] mt-1" style={{ color: '#958ea0' }}>
-                  {overallRatio >= 70 ? '🔥 Great focus! Keep it up.' : overallRatio >= 40 ? '⚡ Decent — room to improve.' : '⚠️ High distraction. Check AI tips below.'}
-                </p>
-              </div>
+              <span className="flex items-center gap-1 font-mono text-[10px]" style={{ color: '#EF4444' }}>
+                <span className="w-2 h-2 rounded-sm inline-block" style={{ background: '#EF4444', opacity: 0.6 }} />Distracted
+              </span>
             </div>
           </div>
-          <div className="text-center sm:text-right shrink-0">
-            <p className="text-2xl font-bold font-mono tabular-nums" style={{ color: '#7bd0ff' }}>{logs.reduce((s, l) => s + l.focusedMinutes, 0)} min</p>
-            <p className="font-mono text-[10px]" style={{ color: '#958ea0' }}>total focused</p>
-          </div>
-        </div>
-      )}
 
-      {/* ── Log Form ── */}
-      {showForm && (
-        <div style={cardStyle}>
-          <p className="font-mono text-[10px] font-bold uppercase tracking-widest mb-4" style={{ color: '#958ea0' }}>Log a Focus Session</p>
-          <form onSubmit={handleLog} className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-widest mb-1.5" style={{ color: '#958ea0' }}>Task Category</label>
-                <select value={category} onChange={e => setCategory(e.target.value)} style={inputStyle}>
-                  {TASK_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-widest mb-1.5" style={{ color: '#958ea0' }}>Date</label>
-                <input type="date" value={date} onChange={e => setDate(e.target.value)} required style={inputStyle} />
+          {/* Subject breakdown */}
+          {subjectRows.length > 0 && (
+            <div style={cardStyle}>
+              <p className="font-mono text-[10px] font-bold uppercase tracking-widest mb-4" style={{ color: '#958ea0' }}>
+                Top Subjects by Focus Time
+              </p>
+              <div className="space-y-2">
+                {subjectRows.map(({ subj, rows }) => (
+                  <SubjectRow key={subj} subject={subj} sessions={rows} />
+                ))}
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="rounded-lg p-3" style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)' }}>
-                <label className="block text-xs font-bold uppercase tracking-wide mb-2" style={{ color: '#10B981' }}>🟢 Focused Minutes</label>
-                <input type="number" min="0" value={focusedMinutes} onChange={e => setFocusedMinutes(e.target.value)} required
-                  placeholder="e.g. 45" style={inputStyle} />
-              </div>
-              <div className="rounded-lg p-3" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
-                <label className="block text-xs font-bold uppercase tracking-wide mb-2" style={{ color: '#EF4444' }}>🔴 Distracted Minutes</label>
-                <input type="number" min="0" value={distractedMinutes} onChange={e => setDistractedMinutes(e.target.value)} required
-                  placeholder="e.g. 15" style={inputStyle} />
-              </div>
-            </div>
-            {focusedMinutes && distractedMinutes && (
-              <div className="rounded-lg p-3" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(73,68,84,0.4)' }}>
-                <p className="font-mono text-[10px] mb-1" style={{ color: '#958ea0' }}>Focus ratio for this session:</p>
-                <div className="flex items-center gap-3">
-                  <RatioBadge ratio={focusRatio(Number(focusedMinutes), Number(distractedMinutes))} />
-                  <div className="flex-1"><FocusBar ratio={focusRatio(Number(focusedMinutes), Number(distractedMinutes))} /></div>
-                </div>
-              </div>
-            )}
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-widest mb-1.5" style={{ color: '#958ea0' }}>Notes (optional)</label>
-              <input type="text" value={notes} onChange={e => setNotes(e.target.value)}
-                placeholder="e.g. Phone notifications were distracting" style={inputStyle} />
-            </div>
-            {formError && <p className="text-sm rounded-lg px-3 py-2" style={{ background: 'rgba(239,68,68,0.1)', color: '#ffb4ab', border: '1px solid rgba(239,68,68,0.3)' }}>{formError}</p>}
-            <div className="flex gap-3">
-              <button type="submit" style={{ ...btnBase, background: '#3b82f6', color: '#fff' }}>Log Session</button>
-              <button type="button" onClick={() => setShowForm(false)}
-                style={{ ...btnBase, background: 'rgba(255,255,255,0.05)', color: '#cbc3d7', border: '1px solid rgba(73,68,84,0.5)' }}>Cancel</button>
-            </div>
-          </form>
-        </div>
-      )}
+          )}
 
-      {/* ── Log History ── */}
-      <div>
-        <p className="font-mono text-[10px] font-bold uppercase tracking-widest mb-3" style={{ color: '#494454' }}>
-          Focus Log History
-          {logs.length > 0 && <span className="ml-2 normal-case" style={{ color: '#958ea0' }}>{logs.length} logged</span>}
-        </p>
-        {logs.length === 0 ? (
-          <div className="text-center py-12 rounded-xl" style={{ border: '1px dashed rgba(73,68,84,0.5)' }}>
-            <p className="text-3xl mb-2">🎯</p>
-            <p className="text-sm" style={{ color: '#958ea0' }}>No focus logs yet. Log your first session above.</p>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {logs.map(log => {
-              const ratio = focusRatio(log.focusedMinutes, log.distractedMinutes)
-              return (
-                <div key={log._id} className="rounded-xl p-4 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3"
-                  style={cardStyle}>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <p className="font-semibold text-sm" style={{ color: '#dfe2ee' }}>{log.subject}</p>
-                      <RatioBadge ratio={ratio} />
+          {/* Session log */}
+          <div>
+            <p className="font-mono text-[10px] font-bold uppercase tracking-widest mb-3" style={{ color: '#494454' }}>
+              Session Log
+              <span className="ml-2 normal-case" style={{ color: '#958ea0' }}>{sessions.length} total</span>
+            </p>
+            <div className="space-y-2">
+              {sessions.map(s => {
+                const ratio = focusRatio(s.focusedMinutes || 0, s.distractedMinutes || 0)
+                return (
+                  <div key={s._id} className="rounded-xl p-4 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3"
+                    style={cardStyle}>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <p className="font-semibold text-sm" style={{ color: '#dfe2ee' }}>{s.subject}</p>
+                        {(s.focusedMinutes > 0 || s.distractedMinutes > 0) && <RatioBadge ratio={ratio} />}
+                        <span className="font-mono text-[10px] px-1.5 py-0.5 rounded"
+                          style={s.source === 'timer-auto'
+                            ? { background: 'rgba(139,92,246,0.12)', color: '#d0bcff', border: '1px solid rgba(139,92,246,0.25)' }
+                            : { background: 'rgba(59,130,246,0.1)', color: '#7bd0ff', border: '1px solid rgba(59,130,246,0.25)' }}>
+                          {s.source === 'timer-auto' ? '⏱ Timer' : '✏️ Manual'}
+                        </span>
+                      </div>
+                      <p className="font-mono text-[10px]" style={{ color: '#958ea0' }}>{s.date}</p>
+                      {s.notes && <p className="text-xs italic mt-1" style={{ color: '#958ea0' }}>"{s.notes}"</p>}
+                      {(s.focusedMinutes > 0 || s.distractedMinutes > 0) && <FocusBar ratio={ratio} />}
                     </div>
-                    <p className="font-mono text-[10px]" style={{ color: '#958ea0' }}>{log.date}</p>
-                    {log.notes && <p className="text-xs italic mt-1" style={{ color: '#958ea0' }}>"{log.notes}"</p>}
-                    <FocusBar ratio={ratio} />
+                    {(s.focusedMinutes > 0 || s.distractedMinutes > 0) && (
+                      <div className="flex gap-4 text-sm shrink-0 sm:text-right">
+                        <div className="text-center">
+                          <p className="font-bold font-mono tabular-nums" style={{ color: '#10B981' }}>{s.focusedMinutes}</p>
+                          <p className="font-mono text-[10px]" style={{ color: '#958ea0' }}>focused</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="font-bold font-mono tabular-nums" style={{ color: '#EF4444' }}>{s.distractedMinutes}</p>
+                          <p className="font-mono text-[10px]" style={{ color: '#958ea0' }}>distracted</p>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  <div className="flex gap-4 text-sm shrink-0 sm:text-right">
-                    <div className="text-center">
-                      <p className="font-bold font-mono tabular-nums" style={{ color: '#10B981' }}>{log.focusedMinutes}</p>
-                      <p className="font-mono text-[10px]" style={{ color: '#958ea0' }}>focused</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="font-bold font-mono tabular-nums" style={{ color: '#EF4444' }}>{log.distractedMinutes}</p>
-                      <p className="font-mono text-[10px]" style={{ color: '#958ea0' }}>distracted</p>
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
+                )
+              })}
+            </div>
           </div>
-        )}
-      </div>
+        </>
+      )}
 
       {/* ── AI Analysis Section ── */}
       <div style={cardStyle}>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
           <div>
-            <p className="font-mono text-[10px] font-bold uppercase tracking-widest mb-0.5" style={{ color: '#10B981' }}>🎯 AI Focus Analysis</p>
-            <p className="font-mono text-[10px]" style={{ color: '#958ea0' }}>AI reviews your focus patterns and gives personalized coaching.</p>
+            <p className="font-mono text-[10px] font-bold uppercase tracking-widest mb-0.5" style={{ color: '#8B5CF6' }}>
+              ✦ AI Focus Analysis
+            </p>
+            <p className="font-mono text-[10px]" style={{ color: '#958ea0' }}>
+              AI reviews your focus patterns across all sessions and gives personalised coaching.
+            </p>
           </div>
-          <button onClick={handleAnalyze} disabled={aiLoading}
-            style={{ ...btnBase, background: aiLoading ? 'rgba(16,185,129,0.4)' : '#10B981', color: '#fff', opacity: aiLoading ? 0.7 : 1 }}>
-            {aiLoading ? '⟳ Analyzing...' : '🎯 Get AI Analysis'}
+          <button onClick={handleAnalyze} disabled={aiLoading || sessions.length === 0}
+            style={{ ...btnBase, background: aiLoading ? 'rgba(139,92,246,0.4)' : '#8B5CF6', color: '#fff', opacity: (aiLoading || sessions.length === 0) ? 0.6 : 1 }}>
+            {aiLoading ? '⟳ Analyzing...' : '✦ Get AI Analysis'}
           </button>
         </div>
+
+        {sessions.length === 0 && !aiLoading && (
+          <p className="font-mono text-[10px]" style={{ color: '#494454' }}>
+            Log at least one session to enable AI analysis.
+          </p>
+        )}
 
         {aiError && <p className="text-sm rounded-lg px-3 py-2 mb-4" style={{ background: 'rgba(239,68,68,0.1)', color: '#ffb4ab', border: '1px solid rgba(239,68,68,0.3)' }}>{aiError}</p>}
 
         {suggestion && (
-          <div className="rounded-xl p-5" style={{ background: 'rgba(16,185,129,0.07)', border: '1px solid rgba(16,185,129,0.25)' }}>
-            {/* AI header + Save button row */}
+          <div className="rounded-xl p-5" style={{ background: 'rgba(139,92,246,0.07)', border: '1px solid rgba(139,92,246,0.25)' }}>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-              <p className="font-mono text-[10px] font-bold uppercase tracking-widest" style={{ color: '#10B981' }}>AI Suggestion</p>
+              <p className="font-mono text-[10px] font-bold uppercase tracking-widest" style={{ color: '#8B5CF6' }}>AI Suggestion</p>
               <div className="flex items-center gap-2">
                 {savedMsg && (
                   <span className="font-mono text-[10px] font-bold px-3 py-1 rounded-lg"
@@ -388,33 +483,28 @@ export default function AnalyzerPage() {
                   </span>
                 )}
                 <button onClick={() => setShowSaveForm(v => !v)}
-                  style={{ ...btnBase, background: 'rgba(16,185,129,0.1)', color: '#10B981', border: '1px solid rgba(16,185,129,0.3)', padding: '0.375rem 0.75rem', fontSize: '0.75rem' }}>
+                  style={{ ...btnBase, background: 'rgba(139,92,246,0.1)', color: '#d0bcff', border: '1px solid rgba(139,92,246,0.3)', padding: '0.375rem 0.75rem', fontSize: '0.75rem' }}>
                   {showSaveForm ? '✕ Cancel' : '💾 Save This Plan'}
                 </button>
               </div>
             </div>
 
-            {/* Save form */}
             {showSaveForm && (
               <div className="mb-4 rounded-xl p-4 space-y-3"
-                style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(16,185,129,0.2)' }}>
+                style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(139,92,246,0.2)' }}>
                 <p className="font-mono text-[10px] font-bold uppercase tracking-widest" style={{ color: '#958ea0' }}>Save AI Plan</p>
                 <div className="flex gap-2">
                   <input type="text" value={saveTitle} onChange={e => setSaveTitle(e.target.value)}
                     placeholder="Give this plan a name (e.g. Week 2 Focus Boost)"
                     style={{ ...inputStyle, flex: 1, width: 'auto' }} />
                   <button onClick={handleSavePlan} disabled={saving || !saveTitle.trim()}
-                    style={{ ...btnBase, background: '#10B981', color: '#fff', opacity: (saving || !saveTitle.trim()) ? 0.5 : 1 }}>
+                    style={{ ...btnBase, background: '#8B5CF6', color: '#fff', opacity: (saving || !saveTitle.trim()) ? 0.5 : 1 }}>
                     {saving ? '...' : '💾 Save'}
                   </button>
                 </div>
-                <p className="font-mono text-[10px]" style={{ color: '#494454' }}>
-                  AI steps will be automatically extracted as a checklist so you can track your progress.
-                </p>
               </div>
             )}
 
-            {/* AI content */}
             <MarkdownRenderer content={suggestion} />
           </div>
         )}
@@ -429,8 +519,7 @@ export default function AnalyzerPage() {
               <span className="font-mono text-[10px] px-2 py-0.5 rounded"
                 style={{ background: 'rgba(73,68,84,0.3)', color: '#958ea0' }}>{plans.length} saved</span>
             </div>
-            <button onClick={() => setShowPlans(false)}
-              className="font-mono text-[10px]" style={{ color: '#958ea0' }}>✕ Hide</button>
+            <button onClick={() => setShowPlans(false)} className="font-mono text-[10px]" style={{ color: '#958ea0' }}>✕ Hide</button>
           </div>
 
           {plans.length === 0 ? (
@@ -441,10 +530,10 @@ export default function AnalyzerPage() {
           ) : (
             <div className="space-y-3">
               {plans.map(plan => {
-                const doneCount = plan.checklistItems.filter(i => i.done).length
+                const doneCount  = plan.checklistItems.filter(i => i.done).length
                 const totalCount = plan.checklistItems.length
                 const isExpanded = expandedId === plan._id
-                const isEditing = editingId === plan._id
+                const isEditing  = editingId  === plan._id
 
                 return (
                   <div key={plan._id} className="rounded-xl overflow-hidden"
@@ -519,8 +608,7 @@ export default function AnalyzerPage() {
                         style={{ borderTop: '1px solid rgba(139,92,246,0.3)', background: 'rgba(139,92,246,0.05)' }}>
                         <p className="font-mono text-[10px] font-bold uppercase tracking-widest" style={{ color: '#8B5CF6' }}>Edit Plan Content</p>
                         <textarea value={editContent} onChange={e => setEditContent(e.target.value)} rows={14}
-                          className="w-full resize-y text-sm"
-                          style={inputStyle} />
+                          className="w-full resize-y text-sm" style={inputStyle} />
                         <p className="font-mono text-[10px]" style={{ color: '#494454' }}>Editing resets checklist progress.</p>
                       </div>
                     )}
@@ -528,14 +616,10 @@ export default function AnalyzerPage() {
                     {/* Expanded: checklist + full content */}
                     {isExpanded && !isEditing && (
                       <div style={{ borderTop: '1px solid rgba(51,65,85,0.4)' }}>
-
-                        {/* Checklist tracking panel */}
                         {plan.checklistItems.length > 0 && (
                           <div className="px-4 py-4" style={{ background: 'rgba(139,92,246,0.06)', borderBottom: '1px solid rgba(139,92,246,0.2)' }}>
                             <div className="flex items-center justify-between mb-3">
-                              <p className="font-mono text-[10px] font-bold uppercase tracking-widest" style={{ color: '#8B5CF6' }}>
-                                ✅ Action Checklist
-                              </p>
+                              <p className="font-mono text-[10px] font-bold uppercase tracking-widest" style={{ color: '#8B5CF6' }}>✅ Action Checklist</p>
                               {doneCount === totalCount && totalCount > 0 && (
                                 <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded"
                                   style={{ background: 'rgba(16,185,129,0.15)', color: '#10B981', border: '1px solid rgba(16,185,129,0.3)' }}>
@@ -551,13 +635,9 @@ export default function AnalyzerPage() {
                                     border: item.done ? '1px solid rgba(16,185,129,0.3)' : '1px solid rgba(73,68,84,0.4)',
                                   }}>
                                   <div className="relative mt-0.5 shrink-0">
-                                    <input type="checkbox" checked={item.done}
-                                      onChange={() => handleToggleItem(plan, item.id)} className="sr-only" />
+                                    <input type="checkbox" checked={item.done} onChange={() => handleToggleItem(plan, item.id)} className="sr-only" />
                                     <div className="w-5 h-5 rounded-md border-2 flex items-center justify-center transition"
-                                      style={{
-                                        background: item.done ? '#10B981' : 'transparent',
-                                        borderColor: item.done ? '#10B981' : 'rgba(73,68,84,0.6)',
-                                      }}>
+                                      style={{ background: item.done ? '#10B981' : 'transparent', borderColor: item.done ? '#10B981' : 'rgba(73,68,84,0.6)' }}>
                                       {item.done && (
                                         <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                                           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -572,20 +652,8 @@ export default function AnalyzerPage() {
                                 </label>
                               ))}
                             </div>
-                            {doneCount > 0 && doneCount < totalCount && (
-                              <p className="font-mono text-[10px] mt-3" style={{ color: '#8B5CF6' }}>
-                                🔥 {doneCount} of {totalCount} steps done — keep going!
-                              </p>
-                            )}
-                            {doneCount === 0 && (
-                              <p className="font-mono text-[10px] mt-3" style={{ color: '#494454' }}>
-                                💡 Check off steps as you implement each recommendation.
-                              </p>
-                            )}
                           </div>
                         )}
-
-                        {/* Full AI plan content */}
                         <div className="px-4 py-4" style={{ background: 'rgba(0,0,0,0.15)' }}>
                           <p className="font-mono text-[10px] font-bold uppercase tracking-widest mb-3" style={{ color: '#494454' }}>Full AI Analysis</p>
                           <MarkdownRenderer content={plan.content} />

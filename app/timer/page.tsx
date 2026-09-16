@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react'
 import { useTimer } from '@/components/TimerContext'
+import Link from 'next/link'
 
 const TASK_CATEGORIES = [
   'DSA / Algorithms', 'Web Development', 'System Design', 'Machine Learning / AI',
@@ -27,6 +28,25 @@ const inputStyle: React.CSSProperties = {
   background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(51,65,85,0.6)',
   color: '#dfe2ee', borderRadius: '0.5rem', padding: '0.5rem 0.75rem',
   fontSize: '0.875rem', width: '100%', outline: 'none',
+}
+
+/** Small tooltip wrapper — shows `tip` on hover above the trigger */
+function Tip({ tip, children }: { tip: string; children: React.ReactNode }) {
+  const [show, setShow] = useState(false)
+  return (
+    <span className="relative inline-flex items-center" style={{ cursor: 'help' }}
+      onMouseEnter={() => setShow(true)} onMouseLeave={() => setShow(false)}>
+      {children}
+      {show && (
+        <span className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 text-left rounded-lg px-3 py-2 text-[11px] leading-snug shadow-xl pointer-events-none"
+          style={{ background: 'rgba(10,14,22,0.97)', border: '1px solid rgba(73,68,84,0.6)', color: '#cbc3d7' }}>
+          {tip}
+          <span className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0"
+            style={{ borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderTop: '5px solid rgba(73,68,84,0.6)' }} />
+        </span>
+      )}
+    </span>
+  )
 }
 
 function CalendarHeatmap({ records }: { records: PointRecord[] }) {
@@ -59,9 +79,10 @@ function CalendarHeatmap({ records }: { records: PointRecord[] }) {
       <div className="grid gap-0.5" style={{ gridTemplateColumns: 'repeat(7, 1fr)' }}>
         {Array.from({ length: firstDayOfWeek }, (_, i) => <div key={`e-${i}`} className="w-7 h-7" />)}
         {days.map(day => (
-          <div key={day.date} title={`${day.date}: ${day.points} pts`}
-            className="w-7 h-7 rounded-md transition-all cursor-default"
-            style={{ background: getColor(day.points) }} />
+          <Link key={day.date} href={`/sessions?date=${day.date}`}
+            title={`${day.date}: ${day.points} pts — click to view sessions`}
+            className="w-7 h-7 rounded-md transition-all hover:ring-2 hover:ring-purple-400"
+            style={{ background: getColor(day.points), display: 'block' }} />
         ))}
       </div>
       <div className="flex items-center gap-1.5 mt-2 justify-end">
@@ -79,7 +100,6 @@ export default function TimerPage() {
   const { state, start, pause, reset, setFocusMins, setBreakMins, setCategory, completedUninterrupted, clearCompleted } = useTimer()
   const [notifStatus, setNotifStatus] = useState<'default' | 'granted' | 'denied'>('default')
   const [pointRecords, setPointRecords] = useState<PointRecord[]>([])
-  const [totalPoints, setTotalPoints] = useState(0)
   const [newPoints, setNewPoints] = useState(0)
   const [showNewPoints, setShowNewPoints] = useState(false)
   const celebrateTimeout = useRef<NodeJS.Timeout | null>(null)
@@ -91,26 +111,34 @@ export default function TimerPage() {
 
   async function loadPoints() {
     const res = await fetch('/api/timer-points')
-    if (res.ok) {
-      const data: PointRecord[] = await res.json()
-      setPointRecords(data)
-      setTotalPoints(data.reduce((s, r) => s + r.points, 0))
-    }
+    if (res.ok) setPointRecords(await res.json())
   }
 
   useEffect(() => {
     if (completedUninterrupted) {
       const pts = Math.floor(state.focusMins / 5) + (state.focusMins >= 25 ? 2 : 0) + (state.focusMins >= 50 ? 3 : 0)
       setNewPoints(pts); setShowNewPoints(true); clearCompleted()
+
+      // Award XP points
       fetch('/api/timer-points', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ focusMinutes: state.focusMins, category: state.category }),
       }).then(() => loadPoints())
+
+      // Auto-log to unified StudySession (source: timer-auto) — replaces the old /api/focus-logs call
       const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' })
-      fetch('/api/focus-logs', {
+      fetch('/api/sessions', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date: today, subject: state.category || 'Pomodoro Session', focusedMinutes: state.focusMins, distractedMinutes: 0, notes: 'Auto-logged from Pomodoro timer — uninterrupted' }),
+        body: JSON.stringify({
+          subject: state.category || 'Pomodoro Session',
+          date: today,
+          focusedMinutes: state.focusMins,
+          distractedMinutes: 0,
+          notes: 'Auto-logged from Pomodoro timer — uninterrupted',
+          source: 'timer-auto',
+        }),
       })
+
       if (celebrateTimeout.current) clearTimeout(celebrateTimeout.current)
       celebrateTimeout.current = setTimeout(() => setShowNewPoints(false), 4000)
     }
@@ -145,9 +173,19 @@ export default function TimerPage() {
         <div style={cardStyle} className="space-y-5">
 
           <div className="flex items-center justify-between">
-            <p className="text-sm font-semibold" style={{ color: '#dfe2ee' }}>
-              {isFocus ? 'Focus Mode' : 'Break Mode'}
-            </p>
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-semibold" style={{ color: '#dfe2ee' }}>
+                {isFocus ? 'Focus Mode' : 'Break Mode'}
+              </p>
+              {isFocus && (
+                <Tip tip="Focus Mode keeps you on task. If your browser supports it, enabling notifications will alert you when the session ends. Future versions will block distracting sites/notifications during this window.">
+                  <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded cursor-help"
+                    style={{ background: 'rgba(239,68,68,0.12)', color: '#EF4444', border: '1px solid rgba(239,68,68,0.3)' }}>
+                    BLOCKED ⓘ
+                  </span>
+                </Tip>
+              )}
+            </div>
             <button onClick={handleEnableAlerts}
               disabled={notifStatus === 'denied'}
               className="font-mono text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg transition"
@@ -249,10 +287,18 @@ export default function TimerPage() {
             </div>
           )}
 
-          <div className="rounded-xl px-4 py-3" style={{ background: 'rgba(139,92,246,0.06)', border: '1px solid rgba(139,92,246,0.2)' }}>
+          {/* Points formula — moved to tooltip */}
+          <div className="rounded-xl px-4 py-3 flex items-center gap-2"
+            style={{ background: 'rgba(139,92,246,0.06)', border: '1px solid rgba(139,92,246,0.2)' }}>
             <p className="font-mono text-[10px]" style={{ color: '#cbc3d7' }}>
-              <strong style={{ color: '#d0bcff' }}>Earn points</strong> by completing sessions without pausing. Points = 1 per 5 min + bonus for 25m (+2) and 50m (+5).
+              <strong style={{ color: '#d0bcff' }}>Earn points</strong> by completing sessions without pausing.
             </p>
+            <Tip tip="Points formula: 1 pt per 5 min of focus, +2 bonus for sessions ≥25 min, +5 bonus for sessions ≥50 min. Pausing resets the uninterrupted bonus.">
+              <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded cursor-help"
+                style={{ background: 'rgba(139,92,246,0.15)', color: '#d0bcff', border: '1px solid rgba(139,92,246,0.3)' }}>
+                How? ⓘ
+              </span>
+            </Tip>
           </div>
         </div>
 
@@ -293,7 +339,8 @@ export default function TimerPage() {
           </div>
 
           <div style={cardStyle}>
-            <p className="font-mono text-[10px] font-bold uppercase tracking-widest mb-4" style={{ color: '#958ea0' }}>Focus Calendar (7 weeks)</p>
+            <p className="font-mono text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: '#958ea0' }}>Focus Calendar (7 weeks)</p>
+            <p className="font-mono text-[10px] mb-4" style={{ color: '#494454' }}>Click any cell to view that day's sessions</p>
             <CalendarHeatmap records={pointRecords} />
             <p className="font-mono text-[10px] mt-3" style={{ color: '#958ea0' }}>Each cell = one day. Darker violet = more focus points.</p>
           </div>

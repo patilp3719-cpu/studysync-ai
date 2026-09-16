@@ -134,12 +134,20 @@ export default function RemindersPage() {
           <p className="text-sm mt-1" style={{ color: '#958ea0' }}>Set real-time alarms for any task, event or deadline.</p>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={handleEnableNotifs} disabled={notifGranted}
-            className="font-mono text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg transition"
+          {/* Notification toggle switch */}
+          <button onClick={notifGranted ? undefined : handleEnableNotifs}
+            title={notifGranted ? 'Notifications are on' : 'Click to enable notifications'}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg transition font-mono text-[10px] font-bold uppercase tracking-widest"
             style={notifGranted
               ? { background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.3)', color: '#10B981', cursor: 'default' }
-              : { background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.3)', color: '#7bd0ff' }}>
-            {notifGranted ? 'Alerts On' : 'Enable Alerts'}
+              : { background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.3)', color: '#7bd0ff', cursor: 'pointer' }}>
+            {/* Toggle pill */}
+            <span className="relative inline-flex w-8 h-4 rounded-full transition-colors shrink-0"
+              style={{ background: notifGranted ? '#10B981' : 'rgba(73,68,84,0.5)' }}>
+              <span className="absolute top-0.5 left-0.5 w-3 h-3 rounded-full bg-white transition-transform"
+                style={{ transform: notifGranted ? 'translateX(16px)' : 'translateX(0)' }} />
+            </span>
+            {notifGranted ? 'Alerts On' : 'Alerts Off'}
           </button>
           <button onClick={() => setShowForm(v => !v)}
             style={{ ...btnBase, background: showForm ? 'rgba(255,255,255,0.07)' : '#8B5CF6', color: showForm ? '#cbc3d7' : '#fff' }}>
@@ -277,7 +285,10 @@ export default function RemindersPage() {
       {filtered.length === 0 ? (
         <div className="text-center py-12 rounded-xl" style={{ border: '1px dashed rgba(73,68,84,0.5)' }}>
           <p className="text-2xl mb-2">🔔</p>
-          <p className="text-sm" style={{ color: '#958ea0' }}>No reminders here. Add one above.</p>
+          <p className="text-sm" style={{ color: '#958ea0' }}>No reminders here.</p>
+          {reminders.length === 0 && (
+            <p className="text-xs mt-1" style={{ color: '#494454' }}>Tap "+ Add Reminder" to set your first alarm.</p>
+          )}
         </div>
       ) : (
         <div className="space-y-3">

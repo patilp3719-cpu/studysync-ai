@@ -81,7 +81,11 @@ export default function TechStackPage() {
   const [level, setLevel] = useState<'beginner' | 'intermediate' | 'advanced'>('beginner')
   const [notes, setNotes] = useState('')
   const [showForm, setShowForm] = useState(false)
-  const [aiResources, setAiResources] = useState('')
+  // Show last saved AI resources inline by default if available
+  const [aiResources, setAiResources] = useState(() => {
+    const saved = loadPlans()
+    return saved.length > 0 ? saved[0].content : ''
+  })
   const [aiLoading, setAiLoading] = useState(false)
   const [filterCat, setFilterCat] = useState('All')
 
@@ -108,7 +112,11 @@ export default function TechStackPage() {
 
   function handleAdd(e: React.FormEvent) {
     e.preventDefault()
-    const entry: StackEntry = { id: Date.now().toString(), tech, category, level, notes }
+    // De-duplicate: case-insensitive match against existing tags
+    const techTrimmed = tech.trim()
+    const duplicate = entries.some(e => e.tech.toLowerCase() === techTrimmed.toLowerCase())
+    if (duplicate) return // silently skip — the form UX can show validation separately
+    const entry: StackEntry = { id: Date.now().toString(), tech: techTrimmed, category, level, notes }
     saveEntries([entry, ...entries])
     setTech(''); setNotes(''); setShowForm(false)
   }
@@ -240,6 +248,11 @@ export default function TechStackPage() {
                 <label className={labelCls}>Technology *</label>
                 <input type="text" value={tech} onChange={e => setTech(e.target.value)} required
                   placeholder="e.g. React, PostgreSQL, Docker" className={inputCls} />
+                {tech.trim() && entries.some(e => e.tech.toLowerCase() === tech.trim().toLowerCase()) && (
+                  <p className="text-xs mt-1 font-medium" style={{ color: '#EF4444' }}>
+                    "{tech.trim()}" is already in your stack.
+                  </p>
+                )}
               </div>
               <div>
                 <label className={labelCls}>Category</label>

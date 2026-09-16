@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react'
 
-interface FlashcardSet { _id: string; subject: string; notes: string; cards: string; createdAt: string }
+interface FlashcardSet { _id: string; subject: string; notes: string; cards: string; playable?: boolean; createdAt: string }
 interface Card { q: string; a: string }
 const ACCEPTED_TYPES = '.txt,.pdf,.doc,.docx,.ppt,.pptx,.md'
 
@@ -193,7 +193,7 @@ export default function FlashcardsPage() {
                 placeholder={uploadMode === 'file' ? 'Extracted text will appear here...' : 'Paste your lecture notes or key concepts here...'}
                 style={{ ...inputStyle, resize: 'none', fontFamily: 'inherit' }} />
               <div className="flex justify-between mt-1">
-                <p className="font-mono text-[10px]" style={{ color: '#958ea0' }}>{notes.length} chars</p>
+                <p className="font-mono text-[10px]" style={{ color: notes.length > 4500 ? '#EF4444' : '#958ea0' }}>{notes.length} / 5000 chars</p>
                 {notes.length > 0 && (
                   <button type="button" onClick={() => { setNotes(''); setFileName('') }}
                     className="font-mono text-[10px]" style={{ color: '#EF4444', background: 'none', border: 'none', cursor: 'pointer' }}>
@@ -234,6 +234,20 @@ export default function FlashcardsPage() {
                     </p>
                   </div>
                   <div className="flex gap-2 shrink-0">
+                    <button
+                      onClick={async () => {
+                        await fetch('/api/flashcards', {
+                          method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ id: set._id, playable: set.playable === false }),
+                        })
+                        loadSets()
+                      }}
+                      title={set.playable === false ? 'Enable in Games Zone' : 'Disable in Games Zone'}
+                      style={set.playable === false
+                        ? { ...btnBase, background: 'rgba(73,68,84,0.2)', color: '#958ea0', border: '1px solid rgba(73,68,84,0.4)', padding: '0.375rem 0.75rem', fontSize: '0.75rem' }
+                        : { ...btnBase, background: 'rgba(99,102,241,0.12)', color: '#818cf8', border: '1px solid rgba(99,102,241,0.3)', padding: '0.375rem 0.75rem', fontSize: '0.75rem' }}>
+                      {set.playable === false ? 'Game: Off' : 'Game: On'}
+                    </button>
                     <button onClick={() => setActiveSet(isActive ? null : set._id)}
                       style={isActive
                         ? { ...btnBase, background: '#8B5CF6', color: '#fff', padding: '0.375rem 0.75rem', fontSize: '0.75rem' }

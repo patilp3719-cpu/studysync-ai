@@ -47,6 +47,20 @@ Return ONLY a valid JSON array like this (no markdown, no explanation):
   return NextResponse.json(doc, { status: 201 })
 }
 
+export async function PATCH(req: NextRequest) {
+  const session = await getServerSession(authOptions)
+  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const { id, playable } = await req.json()
+  if (!id || playable === undefined) return NextResponse.json({ error: 'id and playable required' }, { status: 400 })
+  await connectDB()
+  const doc = await Flashcard.findOneAndUpdate(
+    { _id: id, userId: session.user.id },
+    { playable },
+    { new: true }
+  )
+  return NextResponse.json(doc)
+}
+
 export async function DELETE(req: NextRequest) {
   const session = await getServerSession(authOptions)
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

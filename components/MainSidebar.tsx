@@ -19,7 +19,7 @@ const mainNav = [
   { href: '/sessions',  Icon: IconTimer,     label: 'Sessions' },
   { href: '/analyzer',  Icon: IconTarget,    label: 'Analyzer' },
   { href: '/timer',     Icon: IconTimer,     label: 'Timer' },
-  { href: '/exams',     Icon: IconCalendar,  label: 'Countdown' },
+  { href: '/exams',     Icon: IconCalendar,  label: 'Countdown' },  // route stays /exams
   { href: '/reminders', Icon: IconBell,      label: 'Reminders' },
   { href: '/flashcards',Icon: IconCards,     label: 'Flashcards' },
 ]
