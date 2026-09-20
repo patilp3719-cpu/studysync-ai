@@ -71,14 +71,14 @@ function CircularProgress({ done, total }: { done: number; total: number }) {
   return (
     <div className="flex items-center gap-2">
       <svg width="44" height="44" viewBox="0 0 44 44" className="-rotate-90">
-        <circle cx="22" cy="22" r={r} fill="none" stroke="#e5e7eb" strokeWidth="4" />
+        <circle cx="22" cy="22" r={r} fill="none" stroke="#31353e" strokeWidth="4" />
         <circle cx="22" cy="22" r={r} fill="none" stroke={color} strokeWidth="4"
           strokeDasharray={`${strokeDash} ${circ}`} strokeLinecap="round"
           style={{ transition: 'stroke-dasharray 0.4s ease' }} />
       </svg>
       <div className="leading-tight">
-        <p className="text-sm font-bold text-gray-800">{done}/{total}</p>
-        <p className="text-xs text-gray-400">steps done</p>
+        <p className="text-sm font-bold text-gray-200">{done}/{total}</p>
+        <p className="text-xs text-gray-500">steps done</p>
       </div>
     </div>
   )
@@ -198,8 +198,8 @@ export default function CountdownPage() {
       {/* ── Header ── */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">📅 Countdown</h1>
-          <p className="text-sm text-gray-500 mt-1">Track exams, interviews & deadlines with AI prep plans. Check off steps as you go.</p>
+          <h1 className="text-2xl font-bold text-white">📅 Countdown</h1>
+          <p className="text-sm text-gray-400 mt-1">Track exams, interviews & deadlines with AI prep plans. Check off steps as you go.</p>
         </div>
         <div className="flex items-center gap-2">
           {upcoming.length > 0 && (
@@ -218,33 +218,33 @@ export default function CountdownPage() {
 
       {/* ── Add Form ── */}
       {showForm && (
-        <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
-          <h2 className="text-base font-semibold text-gray-700 mb-4">New Countdown Event</h2>
+        <div className="bg-[#1c2028] border border-[#494454] rounded-2xl p-6 shadow-sm">
+          <h2 className="text-base font-semibold text-gray-200 mb-4">New Countdown Event</h2>
           <form onSubmit={handleAdd} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Event Type *</label>
+                <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Event Type *</label>
                 <select value={eventType} onChange={e => setEventType(e.target.value)}
-                  className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+                  className="w-full border border-[#494454] bg-[#262a33] text-gray-100 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
                   {EVENT_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Event Title / Subject *</label>
+                <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Event Title / Subject *</label>
                 <input type="text" value={subject} onChange={e => setSubject(e.target.value)} required
                   placeholder="e.g. System Design Interview at Google"
-                  className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
+                  className="w-full border border-[#494454] bg-[#262a33] text-gray-100 placeholder-gray-500 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Date *</label>
+                <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Date *</label>
                 <input type="date" value={examDate} onChange={e => setExamDate(e.target.value)} required
-                  className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
+                  className="w-full border border-[#494454] bg-[#262a33] text-gray-100 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Notes (optional)</label>
+                <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Notes (optional)</label>
                 <input type="text" value={notes} onChange={e => setNotes(e.target.value)}
                   placeholder="e.g. LeetCode hard, system design focus"
-                  className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
+                  className="w-full border border-[#494454] bg-[#262a33] text-gray-100 placeholder-gray-500 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
               </div>
             </div>
             {formError && <p className="text-red-600 text-sm bg-red-50 border border-red-200 rounded-lg px-3 py-2">{formError}</p>}
@@ -261,14 +261,14 @@ export default function CountdownPage() {
         <div className="flex flex-wrap gap-2">
           <button onClick={() => setFilterType('all')}
             className={`px-3 py-1.5 rounded-full text-xs font-semibold transition ${
-              filterType === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              filterType === 'all' ? 'bg-indigo-600 text-white' : 'bg-[#262a33] text-gray-400 hover:bg-[#31353e] hover:text-gray-200'
             }`}>
             All ({events.length})
           </button>
           {EVENT_TYPES.filter(t => events.some(e => (e.eventType || 'exam') === t.value)).map(t => (
             <button key={t.value} onClick={() => setFilterType(t.value)}
               className={`px-3 py-1.5 rounded-full text-xs font-semibold transition ${
-                filterType === t.value ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                filterType === t.value ? 'bg-indigo-600 text-white' : 'bg-[#262a33] text-gray-400 hover:bg-[#31353e] hover:text-gray-200'
               }`}>
               {t.label}
             </button>
@@ -278,10 +278,10 @@ export default function CountdownPage() {
 
       {/* ── Event Cards ── */}
       {filtered.length === 0 ? (
-        <div className="text-center py-12 bg-white border border-dashed border-gray-200 rounded-2xl">
-          <p className="text-4xl mb-2">📅</p>
-          <p className="text-gray-500 text-sm">No events added yet.</p>
-          <p className="text-gray-400 text-xs mt-1">Add any upcoming event — exam, interview, deadline — and get an AI prep plan.</p>
+        <div className="text-center py-16 bg-[#1c2028] border border-dashed border-[#494454] rounded-2xl">
+          <p className="text-4xl mb-3">📅</p>
+          <p className="text-gray-200 text-sm font-medium">No events added yet.</p>
+          <p className="text-gray-500 text-xs mt-1">Add any upcoming event — exam, interview, deadline — and get an AI prep plan.</p>
         </div>
       ) : (
         <div className="space-y-5">
@@ -300,8 +300,8 @@ export default function CountdownPage() {
 
             return (
               <div key={event._id}
-                className={`bg-white rounded-2xl shadow-sm overflow-hidden border-2 transition-all
-                  ${allDone ? 'border-green-300' : isUrgent ? 'border-red-200' : 'border-gray-200'}`}>
+                className={`bg-[#1c2028] rounded-2xl overflow-hidden border-2 transition-all
+                  ${allDone ? 'border-green-500/60' : isUrgent ? 'border-red-500/50' : 'border-[#494454]'}`}>
 
                 {/* ── Card header ── */}
                 <div className="px-5 py-4">
@@ -317,7 +317,7 @@ export default function CountdownPage() {
                     {/* Title + meta */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap mb-1">
-                        <p className="font-bold text-gray-900 text-base">{event.subject}</p>
+                        <p className="font-bold text-white text-base">{event.subject}</p>
                         <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${typeConfig.color}`}>
                           {typeConfig.label}
                         </span>
@@ -327,13 +327,13 @@ export default function CountdownPage() {
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-gray-400">
+                      <p className="text-xs text-gray-500">
                         {new Date(event.examDate).toLocaleDateString('en-IN', {
                           weekday: 'short', month: 'short', day: 'numeric',
                           year: 'numeric', timeZone: 'Asia/Kolkata'
                         })}
                       </p>
-                      {event.notes && <p className="text-xs text-gray-400 mt-0.5 italic">"{event.notes}"</p>}
+                      {event.notes && <p className="text-xs text-gray-500 mt-0.5 italic">"{event.notes}"</p>}
                       <div className="mt-1.5"><CountdownBadge days={days} /></div>
                     </div>
 
@@ -364,10 +364,10 @@ export default function CountdownPage() {
                   {totalCount > 0 && (
                     <div className="mt-3">
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs text-gray-400">{doneCount} of {totalCount} prep steps done</span>
-                        <span className={`text-xs font-bold ${allDone ? 'text-green-600' : 'text-purple-600'}`}>{pct}%</span>
+                        <span className="text-xs text-gray-500">{doneCount} of {totalCount} prep steps done</span>
+                        <span className={`text-xs font-bold ${allDone ? 'text-green-400' : 'text-purple-400'}`}>{pct}%</span>
                       </div>
-                      <div className="w-full bg-gray-100 rounded-full h-2">
+                      <div className="w-full bg-[#262a33] rounded-full h-2">
                         <div
                           className={`h-2 rounded-full transition-all duration-500 ${allDone ? 'bg-green-500' : 'bg-purple-500'}`}
                           style={{ width: `${pct}%` }}
@@ -379,13 +379,13 @@ export default function CountdownPage() {
 
                 {/* ── Expanded: AI prep plan with checkboxes ── */}
                 {isExpanded && event.aiChecklist && (
-                  <div className="border-t border-gray-100">
+                  <div className="border-t border-[#494454]">
 
                     {/* Plan header bar */}
-                    <div className="bg-gradient-to-r from-purple-50 to-indigo-50 px-5 py-3 flex items-center justify-between border-b border-purple-100">
+                    <div className="bg-[#262a33] px-5 py-3 flex items-center justify-between border-b border-[#494454]">
                       <div className="flex items-center gap-2">
                         <span className="text-base">🤖</span>
-                        <p className="text-xs font-bold text-purple-700 uppercase tracking-widest">AI Prep Plan</p>
+                        <p className="text-xs font-bold text-purple-300 uppercase tracking-widest">AI Prep Plan</p>
                         {savingStep === event._id && (
                           <span className="text-xs text-purple-400 animate-pulse">saving...</span>
                         )}
@@ -396,8 +396,8 @@ export default function CountdownPage() {
                             onClick={() => handleMarkAllDone(event, steps)}
                             className={`text-xs px-3 py-1 rounded-lg border font-semibold transition ${
                               allDone
-                                ? 'bg-gray-100 text-gray-500 border-gray-200 hover:bg-white'
-                                : 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100'
+                                ? 'bg-[#31353e] text-gray-400 border-[#494454] hover:bg-[#262a33]'
+                                : 'bg-green-900/30 text-green-400 border-green-700/50 hover:bg-green-900/50'
                             }`}>
                             {allDone ? '↺ Clear All' : '✓ Mark All Done'}
                           </button>
@@ -405,7 +405,7 @@ export default function CountdownPage() {
                         {!isEditing && (
                           <button
                             onClick={() => { setEditingChecklist(event._id); setEditChecklistContent(event.aiChecklist || '') }}
-                            className="text-xs border border-purple-200 text-purple-600 px-2.5 py-1 rounded-lg hover:bg-purple-100 transition">
+                            className="text-xs border border-purple-700/50 text-purple-400 px-2.5 py-1 rounded-lg hover:bg-purple-900/30 transition">
                             ✏️ Edit
                           </button>
                         )}
@@ -414,13 +414,13 @@ export default function CountdownPage() {
 
                     {/* Edit mode */}
                     {isEditing ? (
-                      <div className="bg-purple-50 px-5 py-4 space-y-3">
-                        <p className="text-xs font-bold text-purple-700 uppercase tracking-wide">Edit Plan (Markdown)</p>
+                      <div className="bg-[#1c2028] px-5 py-4 space-y-3">
+                        <p className="text-xs font-bold text-purple-300 uppercase tracking-wide">Edit Plan (Markdown)</p>
                         <textarea
                           value={editChecklistContent}
                           onChange={e => setEditChecklistContent(e.target.value)}
                           rows={12}
-                          className="w-full border border-purple-200 rounded-xl px-3 py-2 text-sm font-mono bg-white focus:outline-none focus:ring-2 focus:ring-purple-400 resize-y"
+                          className="w-full border border-[#494454] rounded-xl px-3 py-2 text-sm font-mono bg-[#262a33] text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 resize-y"
                         />
                         <p className="text-xs text-gray-400">
                           ⚠️ Editing will reset all checkbox progress for this plan.
@@ -450,11 +450,11 @@ export default function CountdownPage() {
                           <>
                             {/* All done banner */}
                             {allDone && (
-                              <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3 flex items-center gap-3 mb-3">
+                              <div className="bg-green-900/20 border border-green-700/40 rounded-xl px-4 py-3 flex items-center gap-3 mb-3">
                                 <span className="text-2xl">🎉</span>
                                 <div>
-                                  <p className="text-sm font-bold text-green-800">All prep steps completed!</p>
-                                  <p className="text-xs text-green-600 mt-0.5">You're fully prepared. Good luck! 💪</p>
+                                  <p className="text-sm font-bold text-green-300">All prep steps completed!</p>
+                                  <p className="text-xs text-green-400 mt-0.5">You're fully prepared. Good luck! 💪</p>
                                 </div>
                               </div>
                             )}
@@ -466,8 +466,8 @@ export default function CountdownPage() {
                                   key={step.id}
                                   className={`flex items-start gap-3 cursor-pointer group rounded-xl px-4 py-3 border transition-all
                                     ${isDone
-                                      ? 'bg-green-50 border-green-200'
-                                      : 'bg-white border-gray-200 hover:border-purple-300 hover:bg-purple-50'
+                                      ? 'bg-green-900/20 border-green-700/40'
+                                      : 'bg-[#1c2028] border-[#494454] hover:border-purple-500/50 hover:bg-purple-900/10'
                                     }`}
                                 >
                                   {/* Custom checkbox */}
@@ -481,7 +481,7 @@ export default function CountdownPage() {
                                     <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all
                                       ${isDone
                                         ? 'bg-green-500 border-green-500'
-                                        : 'border-gray-300 bg-white group-hover:border-purple-400'
+                                        : 'border-[#494454] bg-[#262a33] group-hover:border-purple-500'
                                       }`}>
                                       {isDone && (
                                         <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
@@ -498,7 +498,7 @@ export default function CountdownPage() {
                                       {idx + 1}.
                                     </span>
                                     <span className={`text-sm leading-snug transition-all
-                                      ${isDone ? 'line-through text-gray-400' : 'text-gray-700'}`}>
+                                      ${isDone ? 'line-through text-gray-500' : 'text-gray-200'}`}>
                                       {step.text}
                                     </span>
                                   </div>
@@ -515,9 +515,9 @@ export default function CountdownPage() {
 
                             {/* Encouragement footer */}
                             {doneCount > 0 && !allDone && (
-                              <div className="mt-3 bg-purple-50 border border-purple-100 rounded-xl px-4 py-2.5 flex items-center gap-2">
+                              <div className="mt-3 bg-purple-900/20 border border-purple-700/30 rounded-xl px-4 py-2.5 flex items-center gap-2">
                                 <span className="text-base">🔥</span>
-                                <p className="text-xs text-purple-700 font-medium">
+                                <p className="text-xs text-purple-300 font-medium">
                                   {doneCount} of {totalCount} done — keep going, you're {pct}% prepared!
                                 </p>
                               </div>
@@ -545,7 +545,7 @@ export default function CountdownPage() {
       {pastEvents.length > 0 && (
         <div>
           <button onClick={() => setShowPast(v => !v)}
-            className="flex items-center gap-2 text-sm font-semibold text-gray-400 hover:text-gray-600 transition mb-3">
+            className="flex items-center gap-2 text-sm font-semibold text-gray-400 hover:text-gray-200 transition mb-3">
             <span>{showPast ? '▼' : '▶'}</span>
             Past Events ({pastEvents.length})
           </button>
@@ -556,16 +556,16 @@ export default function CountdownPage() {
                 const typeConf = getTypeConfig(event.eventType || 'exam')
                 return (
                   <div key={event._id}
-                    className="bg-gray-100 border border-gray-200 rounded-2xl p-4 flex items-center justify-between gap-3">
+                    className="bg-[#1c2028] border border-[#494454] rounded-2xl p-4 flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3 min-w-0">
                       <span className="text-xl shrink-0">{typeConf.icon}</span>
                       <div className="min-w-0">
-                        <p className="font-semibold text-sm text-gray-600 truncate">{event.subject}</p>
-                        <p className="text-xs text-gray-400">{new Date(event.examDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })} · Passed {Math.abs(days)}d ago</p>
+                        <p className="font-semibold text-sm text-gray-400 truncate">{event.subject}</p>
+                        <p className="text-xs text-gray-500">{new Date(event.examDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })} · Passed {Math.abs(days)}d ago</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
-                      <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-gray-200 text-gray-500">Passed</span>
+                      <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[#31353e] text-gray-400">Passed</span>
                       <button onClick={() => handleDelete(event._id)}
                         className="text-xs text-gray-400 hover:text-red-500 transition">✕</button>
                     </div>
